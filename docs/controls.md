@@ -1,16 +1,27 @@
 # Controls
 
-How the pilot's inputs become the four control values the sim takes (`CLAUDE.md`, conventions): elevator,
-aileron and rudder from −1 to 1, airbrake from 0 to 1. Every source writes the same control state; the
+How the pilot's inputs become the control values the sim takes (`CLAUDE.md`, conventions): elevator,
+aileron and rudder from −1 to 1; airbrake, throttle and flaps from 0 to 1. Every source writes the same control state; the
 sim never knows which one was used. The maths is in `src/input/curves.js`, pure and tested; reading the
 sensors and devices is the rest of `src/input/`.
 
 ## One control state
 
 Each frame, every active source offers a value for each axis. For elevator, aileron and rudder the
-largest offer by size wins, so a gamepad or keyboard can always override tilt. The airbrake is a lever
-with a position: the on-screen slider sets it, and keys and the gamepad move it. It stays where it was
-left.
+largest offer by size wins, so a gamepad or keyboard can always override tilt.
+
+**The lever** is the one on the left: the airbrake on a glider, the throttle on an airplane with an
+engine (an airplane has one or the other until one has both). It has a position: the on-screen slider
+sets it, and keys and the gamepad move it. It stays where it was left. Bottom is airbrake closed or
+throttle at idle.
+
+**Flaps** have two positions, up and landing. The flaps button, a key or a gamepad button sets the
+selector; the flaps then run toward it at the card's `travel_s` for full travel, so they take a few
+seconds to come down. Only airplanes with flaps have the button.
+
+**Wheel brakes** follow the card's rule (flight-model 11.4): on the glider, the lever at the top; on
+an airplane with an engine, the throttle at idle. With the brakes on, the rudder makes them
+differential, like toe brakes.
 
 ## Assists
 
@@ -23,6 +34,12 @@ pause screen, on by default. The maths is in `src/input/assists.js`, pure and te
 with rudder against the yaw the ailerons make (the card's `aileron.cn_full` over `rudder.cn_full`), and
 adds rudder in proportion to the sideslip that remains: full rudder at 4° of sideslip. It works only
 while the pilot isn't using the rudder; a gamepad's triggers or the Q and E keys take over at once.
+On the ground, with a wheel touching, it does what a pilot's feet do on a takeoff or landing roll
+instead: while the pilot isn't steering it holds the heading the airplane had when the pilot last let
+go, with rudder against the heading error (full at 10°) and the yaw rate (full at 20°/s). And while
+the pilot isn't using the rudder, roll input steers on the ground: it goes to the rudder, and the
+ailerons stay neutral. That is how tilt, the keyboard's A and D and a gamepad without triggers steer
+a taxiing airplane.
 
 **Auto-trim.** Gliders and light airplanes fly hands off on a trim lever; here there is no lever, so
 the trim works itself. While the stick is held off centre, the trim slowly takes over the held amount
@@ -78,23 +95,26 @@ attitude:
 Roll fades out as the screen comes to face straight up or down, where the steering-wheel angle has no
 meaning. The method and the signs were confirmed on an iPhone in `135crewdog/rage`.
 
-There is no rudder on tilt in M2. Turns slip a little without it, which is honest; auto-rudder arrives
-as an assist in M3.
+Tilt has no rudder of its own. In the air, auto-rudder works it (Assists). On the ground, where a
+taildragger steers with its feet, auto-rudder passes the roll tilt to the rudder: turning the phone
+steers.
 
 ## Touch, and the screen's layout
 
 The screen follows `135crewdog/rage`:
 
-- **Left edge: the speed brakes.** A slim slider, a smooth slide from bottom to top with no detent:
-  bottom is closed, top is fully open. It stays where it is left. On the ground, fully open also puts
-  on the wheel brake (the card's `wheel_brake`). An airplane with an engine will have its throttle here
-  instead, and its wheel brake will follow its own rule (for example, the throttle at idle).
+- **Left edge: the lever.** A slim slider, a smooth slide from bottom to top with no detent. On the
+  glider it is the speed brakes: bottom closed, top fully open, and on the ground fully open also puts
+  on the wheel brake. On an airplane with an engine it is the throttle: bottom idle, top full, and at
+  idle the wheel brakes are on. It stays where it is left.
 - **Top right: pause.** A round button. Resume, recenter the tilt, restart, the menu and the settings
   (HUD, debug) are on the pause screen.
-- **Right side: future buttons.** Flaps, gear and the like go on the right, where the right thumb
-  reaches them.
+- **Right side: buttons.** The flaps button (on airplanes with flaps) shows the selector: "Flaps up"
+  or "Flaps down". Gear and the like join it later, where the right thumb reaches them.
 - **The HUD:** airspeed on the left, altitude on the right with vertical speed below it. Plain
-  numbers, no unit labels: always knots, feet and feet per minute. There is no other unit setting.
+  numbers, no unit labels: always knots, feet and feet per minute. There is no other unit setting. On
+  an airplane with an engine the throttle's percentage is a plain number beside the top of the lever,
+  and the flaps' position, in degrees while they move and when down, is on the flaps button.
 
 Dragging anywhere else on the screen looks around (the chase camera); letting go eases the view back.
 
@@ -107,7 +127,8 @@ Through the browser's Gamepad API, the standard mapping:
 | left stick, left and right | aileron |
 | left stick, back and forward | elevator: pulling back is nose up |
 | right trigger, left trigger | right rudder, left rudder (the difference) |
-| right stick, back and forward | airbrake lever: back opens, forward closes, at up to one full travel per second |
+| right stick, back and forward | the lever (airbrake or throttle): back opens the airbrake or adds power, forward closes it or takes power off, at up to one full travel per second |
+| right shoulder button | flaps: up or down |
 
 Stick axes use the curve above with a dead zone of 0.08; triggers with a dead zone of 0.05.
 
@@ -118,7 +139,8 @@ Stick axes use the curve above with a dead zone of 0.08; triggers with a dead zo
 | ↑ / W, ↓ / S | elevator: ↑ pushes (nose down), ↓ pulls, as in most flight sims |
 | ← / A, → / D | aileron |
 | Q, E | left and right rudder |
-| B, V | open and close the airbrake lever, at one full travel per second while held |
+| B, V | the lever: B opens the airbrake or adds power, V closes it or takes power off, at one full travel per second while held |
+| F | flaps: up or down |
 | R | restart from the last start position |
 
 Keys move the controls toward full deflection over 0.25 s and back to centre over 0.25 s when

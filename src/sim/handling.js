@@ -5,7 +5,7 @@
 import { DT, Sim, totalForces } from "./sim.js";
 import { derivatives } from "./body.js";
 import { eigenvalues } from "./eigen.js";
-import { glide } from "./trim.js";
+import { handlingTrim } from "./trim.js";
 import { qfromEuler, qtoEuler } from "./vec.js";
 
 const G0 = 9.80665;
@@ -56,8 +56,8 @@ function pairOf(a, b) {
  * time to double (unstable) or to half (stable) in s.
  */
 export function modes(card, V, { altitude = 0, airbrake = 0 } = {}) {
-  const trim = glide(card, V, { altitude, airbrake });
-  const ctl = { elevator: trim.elevator, aileron: 0, rudder: 0, airbrake };
+  const trim = handlingTrim(card, V, { altitude, airbrake });
+  const ctl = { elevator: trim.elevator, aileron: 0, rudder: 0, airbrake, flaps: 0, throttle: trim.throttle };
   const theta = trim.alpha - trim.gamma;
   const s0 = [V * Math.cos(trim.alpha), 0, V * Math.sin(trim.alpha), 0, 0, 0, 0, theta];
   // Trimmed wings level, the longitudinal and lateral motions are independent (by symmetry).
@@ -117,20 +117,20 @@ function turning(card, trim, phi, h) {
  * way to 45° the other with full aileron, and the most roll rate full aileron gives (deg/s).
  */
 export function rollPerformance(card, V, { altitude = 0, limit = 10 } = {}) {
-  const trim = glide(card, V, { altitude });
-  const elevator = trim.elevator;
+  const trim = handlingTrim(card, V, { altitude });
+  const { elevator, throttle } = trim;
   // bank reversal, from a 45° left bank, full right aileron
   const sim = new Sim(card, turning(card, trim, (-45 * Math.PI) / 180, altitude));
   let reversal = Infinity;
   for (let i = 0; i < limit / DT; i++) {
-    sim.step({ elevator, aileron: 1 });
+    sim.step({ elevator, aileron: 1, throttle });
     if (qtoEuler(sim.state.q).roll >= (45 * Math.PI) / 180) { reversal = sim.t; break; }
   }
   // the most roll rate, from wings level
   const sim2 = new Sim(card, turning(card, trim, 0, altitude));
   let pMax = 0;
   for (let i = 0; i < 6 / DT; i++) {
-    sim2.step({ elevator, aileron: 1 });
+    sim2.step({ elevator, aileron: 1, throttle });
     pMax = Math.max(pMax, sim2.state.omega[0]);
     if (Math.abs(qtoEuler(sim2.state.q).roll) > (150 * Math.PI) / 180) break;
   }

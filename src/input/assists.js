@@ -18,6 +18,8 @@ export const ASSIST = {
   levelRate: 0.4, // aileron per rad/s of roll rate
   levelMax: 0.4,
   levelPilot: 0.03, // pilot aileron beyond this takes over
+  groundHeadingFull: (10 * Math.PI) / 180, // heading error that calls for full rudder on the ground
+  groundRateFull: (20 * Math.PI) / 180, // yaw rate that calls for full rudder on the ground
 };
 
 /**
@@ -25,7 +27,7 @@ export const ASSIST = {
  * takes the pilot's controls and returns the controls the airplane flies with.
  */
 export function createAssists(card, trim = 0, a = ASSIST) {
-  const st = { trim, absorbed: 0 };
+  const st = { trim, absorbed: 0, hold: null };
   return {
     state: st,
     setTrim(t) { st.trim = t; st.absorbed = 0; },
@@ -45,9 +47,26 @@ export function createAssists(card, trim = 0, a = ASSIST) {
       }
 
       // auto-rudder: against the ailerons' adverse yaw, and in proportion to the sideslip left
-      if (on.rudder && Math.abs(pilot.rudder) < a.rudderPilot && air.V > 1) {
-        const lead = card.rudder.cn ? -card.aileron.cn / card.rudder.cn : 0;
-        out.rudder = clamp(lead * out.aileron + air.beta / a.rudderFullSlip, -1, 1);
+      const onGround = sim.touching.some(Boolean);
+      const pilotRudder = Math.abs(pilot.rudder) >= a.rudderPilot;
+      if (on.rudder && onGround && !pilotRudder) {
+        // on the ground: roll input steers; otherwise hold the heading the pilot left it on
+        if (Math.abs(pilot.aileron) >= a.levelPilot) {
+          out.rudder = pilot.aileron;
+          out.aileron = 0;
+          st.hold = null;
+        } else {
+          if (st.hold === null) st.hold = euler.yaw;
+          let err = euler.yaw - st.hold;
+          err = Math.atan2(Math.sin(err), Math.cos(err));
+          out.rudder = clamp(-err / a.groundHeadingFull - sim.state.omega[2] / a.groundRateFull, -1, 1);
+        }
+      } else {
+        st.hold = null;
+        if (on.rudder && !pilotRudder && air.V > 1) {
+          const lead = card.rudder.cn ? -card.aileron.cn / card.rudder.cn : 0;
+          out.rudder = clamp(lead * out.aileron + air.beta / a.rudderFullSlip, -1, 1);
+        }
       }
 
       // auto-trim: the trim takes over a held stick; the stick's share shrinks by as much

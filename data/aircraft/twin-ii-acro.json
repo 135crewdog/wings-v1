@@ -56,7 +56,7 @@
   },
   "engines": [],
   "cg": { "from_nose_m": 2.80, "above_nose_m": 0.21 },
-  "glb": { "file": "assets/models/twin-ii-acro.glb", "origin": "nose tip, the shape file's airframe origin" },
+  "glb": {"file": "assets/models/twin-ii-acro.glb", "origin": "nose tip, the shape file's airframe origin", "liveries": [{"name": "Club white", "texture": "assets/models/twin-ii-acro_club-white.png"}, {"name": "Cadet red", "texture": "assets/models/twin-ii-acro_cadet-red.png"}]},
   "contacts": [
     { "name": "main_wheel", "type": "wheel", "pos_m": [-0.20, 0, 0.62], "k": 120000, "c": 8000, "brake": true },
     { "name": "nose_wheel", "type": "wheel", "pos_m": [ 1.97, 0, 0.64], "k": 40000,  "c": 3000 },

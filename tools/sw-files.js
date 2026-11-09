@@ -20,7 +20,7 @@ const files = [
   ...under("icons").filter((f) => f.endsWith(".png")),
   ...under("src"),
   ...under("data"),
-  ...under("assets/models").filter((f) => f.endsWith(".glb")),
+  ...under("assets/models").filter((f) => f.endsWith(".glb") || f.endsWith(".png")), // models and livery textures
   "vendor/three/three.module.js",
   "vendor/three/three.core.js",
   ...under("vendor/three/addons"),

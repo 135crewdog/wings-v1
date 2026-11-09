@@ -1,0 +1,344 @@
+{
+ "id": "super-cub",
+ "name": "Super Cub",
+ "maker": "Piper",
+ "model": "PA-18-150 Super Cub",
+ "category": "light airplane, tailwheel",
+ "sources": {
+  "tcds": "FAA type certificate data sheet 1A2, revision 38 (PA-18 \"150\")",
+  "im": "Piper PA-18 Super Cub information manual",
+  "wiki": "Wikipedia, Piper PA-18 Super Cub (specifications)",
+  "shape": "models/shapes/super-cub.json, traced from the PA-18 Super Cub three-view",
+  "roskam": "J. Roskam, Airplane Design Part V: typical non-dimensional radii of gyration for single-engine propeller airplanes",
+  "fit": "solved from this card's targets with the model in docs/flight-model.md",
+  "est": "estimate, to be tuned by feel or replaced by a better source"
+ },
+ "mass": {
+  "mass_kg": 793.8,
+  "g_max": 3.8,
+  "g_min": -1.52,
+  "radii_of_gyration_m": {
+   "roll": 1.34,
+   "pitch": 1.31,
+   "yaw": 1.72
+  }
+ },
+ "wing": {
+  "area_m2": 16.58,
+  "span_m": 10.73,
+  "sweep_deg": 0,
+  "taper": 1.0,
+  "alpha0_deg": -4.5,
+  "cl_max": 1.736,
+  "cl_min": -0.9,
+  "stall_softness_deg": 2.0,
+  "oswald_e": 0.7
+ },
+ "drag": {
+  "cd0": 0.0342,
+  "mach_dd": 0.7,
+  "cdw_peak": 0
+ },
+ "stability": {
+  "static_margin": 0.15,
+  "cl_trim0": 0.5,
+  "cmq": -12,
+  "cy_beta": -0.31,
+  "cl_beta": -0.12,
+  "clp": -0.47,
+  "clr_per_cl": 0.3,
+  "cn_beta": 0.065,
+  "cnp_per_cl": -0.1,
+  "cnr": -0.13,
+  "autorotation": 0.5
+ },
+ "control": {
+  "elevator": {
+   "cm_full_up": 0.5,
+   "cm_full_down": -0.33
+  },
+  "aileron": {
+   "cl_full": 0.05,
+   "cn_full": -0.008
+  },
+  "rudder": {
+   "cn_full": 0.03,
+   "cy_full": -0.08,
+   "cl_full": -0.004
+  }
+ },
+ "devices": {
+  "flaps": {
+   "cl0": 0.3,
+   "cd": 0.02,
+   "dclmax": 0.338,
+   "cm": -0.04,
+   "travel_s": 2.0
+  }
+ },
+ "engines": [
+  {
+   "type": "piston",
+   "power_hp": 150,
+   "rpm": 2700,
+   "pos_m": [
+    1.862,
+    0.0,
+    0.183
+   ],
+   "axis": [
+    1,
+    0,
+    0
+   ],
+   "rotation": "cw",
+   "p_factor": 0.05,
+   "slipstream_tail": 0.5,
+   "prop": {
+    "diameter_in": 74,
+    "eta_max": 0.711,
+    "design_mph": 115,
+    "falloff": 0.5
+   }
+  }
+ ],
+ "cg": {
+  "from_nose_m": 2.012,
+  "above_nose_m": 0.183
+ },
+ "glb": {
+  "file": "assets/models/super-cub.glb",
+  "origin": "spinner tip, on the thrust line: the shape file's airframe origin",
+  "liveries": [
+   {
+    "name": "Cub yellow",
+    "texture": "assets/models/super-cub_cub-yellow.png"
+   },
+   {
+    "name": "Bush red",
+    "texture": "assets/models/super-cub_bush-red.png"
+   }
+  ]
+ },
+ "contacts": [
+  {
+   "name": "main_left",
+   "type": "wheel",
+   "pos_m": [
+    0.377,
+    -0.885,
+    1.406
+   ],
+   "k": 45000,
+   "c": 4000,
+   "brake": true
+  },
+  {
+   "name": "main_right",
+   "type": "wheel",
+   "pos_m": [
+    0.377,
+    0.885,
+    1.406
+   ],
+   "k": 45000,
+   "c": 4000,
+   "brake": true
+  },
+  {
+   "name": "tail_wheel",
+   "type": "wheel",
+   "pos_m": [
+    -4.73,
+    0.0,
+    0.317
+   ],
+   "k": 20000,
+   "c": 1500,
+   "steer_deg": -25
+  },
+  {
+   "name": "propeller",
+   "type": "skid",
+   "pos_m": [
+    1.862,
+    0.0,
+    1.123
+   ],
+   "k": 50000,
+   "c": 4000
+  },
+  {
+   "name": "tip_left",
+   "type": "skid",
+   "pos_m": [
+    -0.274,
+    -5.358,
+    -0.573
+   ],
+   "k": 50000,
+   "c": 4000
+  },
+  {
+   "name": "tip_right",
+   "type": "skid",
+   "pos_m": [
+    -0.274,
+    5.358,
+    -0.573
+   ],
+   "k": 50000,
+   "c": 4000
+  },
+  {
+   "name": "rudder",
+   "type": "skid",
+   "pos_m": [
+    -4.877,
+    0.0,
+    0.122
+   ],
+   "k": 50000,
+   "c": 4000
+  }
+ ],
+ "wheel_brake": {
+  "when": "throttle_idle"
+ },
+ "crash": {
+  "wheel_sink_ms": 3.0,
+  "skid_speed_ms": 5.0
+ },
+ "speeds": {
+  "approach_kmh": 113,
+  "cruise_kmh": 185
+ },
+ "limits": {
+  "vne_mph": 153,
+  "structural_cruise_mph": 121,
+  "manoeuvre_mph": 96,
+  "flaps_max_mph": 85,
+  "max_weight_normal_lb": 1750,
+  "max_weight_utility_lb": 1500,
+  "cg_range_in_aft_of_wing_le": [
+   14.0,
+   20.0
+  ]
+ },
+ "targets": [
+  {
+   "what": "stall_mph_flaps_full",
+   "mass_kg": 793.8,
+   "value": 43,
+   "tol": 3,
+   "src": "im",
+   "milestone": "M3",
+   "note": "power off, at gross weight; indicated airspeed"
+  },
+  {
+   "what": "stall_mph",
+   "mass_kg": 793.8,
+   "value": 47,
+   "tol": 3,
+   "src": "im",
+   "milestone": "M3",
+   "note": "about 4 mph above the flaps-down stall; the copy of the manual read is unclear on this one, verify"
+  },
+  {
+   "what": "max_level_mph",
+   "mass_kg": 793.8,
+   "value": 130,
+   "tol": 5,
+   "src": "wiki",
+   "milestone": "M3",
+   "note": "sea level, full throttle"
+  },
+  {
+   "what": "climb_fpm_at_mph",
+   "speed_mph": 75,
+   "mass_kg": 793.8,
+   "value": 960,
+   "tol": 60,
+   "src": "wiki",
+   "milestone": "M3",
+   "note": "the climb rate from Wikipedia, at the information manual's best-climb speed (75 mph at gross)"
+  },
+  {
+   "what": "cruise_mph_at_power",
+   "power": 0.75,
+   "mass_kg": 793.8,
+   "value": 115,
+   "tol": 5,
+   "src": "im",
+   "milestone": "M3",
+   "note": "the manual gives no altitude; flown at sea level"
+  }
+ ],
+ "src": {
+  "mass": {
+   "mass_kg": "tcds",
+   "g_max": "est",
+   "g_min": "est",
+   "radii_of_gyration_m": "roskam"
+  },
+  "wing": {
+   "area_m2": "wiki",
+   "span_m": "wiki",
+   "sweep_deg": "shape",
+   "taper": "shape",
+   "alpha0_deg": "est",
+   "cl_max": "fit",
+   "cl_min": "est",
+   "stall_softness_deg": "est",
+   "oswald_e": "est"
+  },
+  "drag": {
+   "cd0": "fit",
+   "mach_dd": "est",
+   "cdw_peak": "est"
+  },
+  "stability": "est",
+  "control": "est",
+  "devices": {
+   "flaps": {
+    "cl0": "est",
+    "cd": "est",
+    "dclmax": "fit",
+    "cm": "est",
+    "travel_s": "est"
+   }
+  },
+  "engines": {
+   "power_hp": "tcds",
+   "rpm": "tcds",
+   "pos_m": "shape",
+   "axis": "est",
+   "rotation": "im",
+   "p_factor": "est",
+   "slipstream_tail": "est",
+   "prop": {
+    "diameter_in": "im",
+    "eta_max": "fit",
+    "design_mph": "est",
+    "falloff": "fit"
+   }
+  },
+  "cg": {
+   "from_nose_m": "tcds",
+   "above_nose_m": "est"
+  },
+  "contacts": {
+   "pos_m": "shape",
+   "k": "est",
+   "c": "est",
+   "steer_deg": "est"
+  },
+  "crash": "est",
+  "speeds": {
+   "approach_kmh": "im",
+   "cruise_kmh": "im"
+  },
+  "limits": "tcds",
+  "glb": "shape"
+ }
+}

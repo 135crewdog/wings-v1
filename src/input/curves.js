@@ -54,11 +54,11 @@ export function tiltControls(tilt, neutral, m = TILT) {
   };
 }
 
-export const PAD = { stickDead: 0.08, triggerDead: 0.05, airbrakeRate: 1 };
+export const PAD = { stickDead: 0.08, triggerDead: 0.05, leverRate: 1 };
 
 /**
  * Controls from a standard-mapping gamepad: axes [lx, ly, rx, ry] (y positive is back, toward you)
- * and the trigger values (0 to 1). The airbrake comes back as a rate (lever travel per second).
+ * and the trigger values (0 to 1). The lever (airbrake or throttle) comes back as a rate (travel per second).
  */
 export function gamepadControls(axes, leftTrigger, rightTrigger, m = PAD) {
   const rudder = shape(rightTrigger, m.triggerDead, 1) - shape(leftTrigger, m.triggerDead, 1);
@@ -66,7 +66,7 @@ export function gamepadControls(axes, leftTrigger, rightTrigger, m = PAD) {
     aileron: shape(axes[0] ?? 0, m.stickDead, 1),
     elevator: shape(axes[1] ?? 0, m.stickDead, 1),
     rudder,
-    airbrakeRate: shape(axes[3] ?? 0, m.stickDead, 1) * m.airbrakeRate,
+    leverRate: shape(axes[3] ?? 0, m.stickDead, 1) * m.leverRate,
   };
 }
 
@@ -83,4 +83,11 @@ export function mergeAxes(offers) {
     for (const k of Object.keys(out)) if (o && Math.abs(o[k] ?? 0) > Math.abs(out[k])) out[k] = o[k];
   }
   return out;
+}
+
+/** Moves the flaps from position `at` toward the selector `to` (0 or 1), full travel in `travel` s. */
+export function flapTravel(at, to, dt, travel) {
+  if (!(travel > 0)) return to;
+  const step = dt / travel;
+  return at < to ? Math.min(to, at + step) : Math.max(to, at - step);
 }

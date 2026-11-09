@@ -62,11 +62,11 @@ test("tilt: full elevator at 25° of pitch, full aileron at 30° of roll, dead z
 
 test("gamepad: pull back is nose up, right stick right is right roll, triggers are rudder, right stick back opens the airbrake", () => {
   const c = gamepadControls([1, 1, 0, 1], 0, 1);
-  assert.deepEqual([c.aileron, c.elevator, c.rudder, c.airbrakeRate], [1, 1, 1, 1]);
+  assert.deepEqual([c.aileron, c.elevator, c.rudder, c.leverRate], [1, 1, 1, 1]);
   const d = gamepadControls([-1, -1, 0, -1], 1, 0);
-  assert.deepEqual([d.aileron, d.elevator, d.rudder, d.airbrakeRate], [-1, -1, -1, -1]);
+  assert.deepEqual([d.aileron, d.elevator, d.rudder, d.leverRate], [-1, -1, -1, -1]);
   const rest = gamepadControls([0.05, -0.07, 0.3, 0.02], 0.03, 0.04);
-  assert.deepEqual([rest.aileron, rest.elevator, rest.rudder, rest.airbrakeRate].map(Math.abs), [0, 0, 0, 0]);
+  assert.deepEqual([rest.aileron, rest.elevator, rest.rudder, rest.leverRate].map(Math.abs), [0, 0, 0, 0]);
 });
 
 test("keys slew to full and back in 0.25 s; the largest offer wins each axis", () => {

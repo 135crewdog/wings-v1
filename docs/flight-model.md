@@ -284,7 +284,7 @@ is deterministic: the same card, initial state, inputs and seed produce the same
 
 ## 9. Trim and the performance figures
 
-All performance figures are at sea level, standard day, airbrakes closed, wings level, unless the
+All performance figures are at sea level, standard day, airbrakes closed, flaps up, wings level, unless the
 target says otherwise. At sea level, indicated, equivalent and true airspeed are the same, so the
 flight manual's indicated speeds can be compared directly.
 
@@ -300,12 +300,23 @@ flight manual's indicated speeds can be compared directly.
   at its trim value (as if trimmed with the trim lever) and everything else neutral. It must stay
   within 2 km/h and 0.5° of the trimmed state. This proves the trim and the integrator agree.
 
+- **Steady flight with power at speed V and throttle τ:** solve for α, δe and the flight-path angle
+  γ (positive climbing) such that, with ω = 0 and wings level, the sim's own total force (section 7,
+  thrust section 7.1, gravity) is zero along and across the flight path and its pitching moment is
+  zero. The rate of climb is `V sin γ`. At τ = 0 this is the glide above, with γ = −γ_glide.
+- **Rate of climb at a speed:** steady flight at full throttle at that speed. **Best rate of climb:**
+  its maximum over V, and the V where it occurs.
+- **Maximum level speed:** the highest V where steady flight at full throttle has γ = 0. **Cruise
+  speed at a power:** the same at the throttle that gives that fraction of rated power.
 - **Turns:** in a level turn at load factor `n` and speed V, the turn rate is `g √(n² − 1) / V`. The
   load factor available at V is the lift limit, `½ ρ V² S CL_peak / W`, or the card's `g_max`,
   whichever is less. The **maximum instantaneous turn rate** is the highest turn rate over V from the
   stall to VNE; it is at the **corner speed** `Vs √g_max`, where the two limits meet, or at VNE when
   the corner is above it. The **maximum sustained turn rate** is
-  the highest turn rate at which thrust equals drag; an airplane without an engine has none.
+  the highest turn rate at which thrust equals drag: at each V, the largest load factor `n` (up to
+  the lift and load limits) at which steady flight at full throttle with the weight taken as `n W`
+  still has γ ≥ 0. The turn's own pitch and yaw rates are left out. An airplane without an engine has
+  none.
 - **Energy-manoeuvrability diagram:** turn rate against speed, from the stall to VNE: the lift limit,
   the load limit (`g_max`), the sustained turn curve (with an engine) and VNE.
 
@@ -326,7 +337,7 @@ Each card is `data/aircraft/<id>.json`. Groups and fields:
 | `devices` | `airbrake` {cd, dclmax, cm}, `flaps` {cl0, cd, dclmax, cm, travel_s} (section 6.4); either may be left out |
 | `engines` | list; empty for a glider. Each: `type` (`piston`), `power_hp` (or `power_kw`), `rpm`, `pos_m`, `axis`, `rotation` (`cw` or `ccw` from the cockpit), `p_factor`, `slipstream_tail`, and `prop` {`diameter_in` or `diameter_m`, `eta_max`, `design_mph` or `design_kmh`, `falloff`} (section 7.1) |
 | `cg` | `from_nose_m`, `above_nose_m`: the CG's place on the airframe, from the model's origin at the nose tip |
-| `glb` | `file` (the model, `assets/models/<id>.glb`), `origin` (where the model's origin is on the airframe) |
+| `glb` | `file` (the model, `assets/models/<id>.glb`), `origin` (where the model's origin is on the airframe), `liveries` (each `name` and `texture`, the skin generated beside the model; the first is the one inside the `.glb`) |
 | `contacts` | list of contact points (section 11), each `name`, `type` (`wheel` or `skid`), `pos_m` (body axes from the CG), `k` (N/m), `c` (N·s/m), and for a wheel `brake` (true when it has one) and `steer_deg` (how far it steers with full rudder, section 11.4; 0 when it doesn't) |
 | `wheel_brake` | `when`: what puts the wheel brakes on (section 11.4): `airbrake_full` (a glider) or `throttle_idle` |
 | `crash` | `wheel_sink_ms`, `skid_speed_ms`: the touchdown limits of section 11.6 |
@@ -471,7 +482,8 @@ the 6-DOF sim itself, with the same forces and equations as flight, never from a
 
 At each of the card's `speeds` (approach and cruise), sea level, airbrakes closed:
 
-1. **Trim** a steady, wings-level glide (section 9).
+1. **Trim** a steady, wings-level glide (section 9), or for an airplane with an engine, steady level
+   flight with the throttle that holds it (section 9, steady flight with power, solved for τ at γ = 0).
 2. **Linearize.** Take the eight states that govern the motion, `u, v, w` (body velocity), `p, q, r`
    and the bank and pitch angles `φ, θ`, and find how each one's rate of change responds to a small
    change in each, by central differences of the sim's own derivatives (sections 7, 8). Trimmed wings
@@ -498,7 +510,8 @@ minutes, must show the phugoid's period and damping (`tests/handling.test.js`).
 
 ### 12.2 Roll performance
 
-Flown in the 6-DOF sim at each speed, sea level, rudder neutral and no assists:
+Flown in the 6-DOF sim at each speed, sea level, from the same trim as the modes, throttle held,
+rudder neutral and no assists:
 
 - **Bank-to-bank time:** from a steady 45° turn one way, full aileron the other way; the time to reach
   45° the other way.

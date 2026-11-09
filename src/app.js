@@ -85,7 +85,7 @@ function start(id) {
   sim = new Sim(card, glideState(trim, pose.altitude, { heading: pose.heading, north: pose.north, east: pose.east }), { ground });
   prev = sim.state;
   acc = 0;
-  controls.setAirbrake(0);
+  controls.reset();
   chase.reset();
   mode = "flying";
   show();
@@ -150,7 +150,7 @@ const brakeEl = $("brakes"), brakeTrack = brakeEl.querySelector(".track");
 let brakeFinger = null;
 function slide(e) {
   const r = brakeTrack.getBoundingClientRect();
-  controls.setAirbrake(1 - (e.clientY - r.top) / r.height);
+  controls.setLever(1 - (e.clientY - r.top) / r.height);
 }
 brakeEl.addEventListener("pointerdown", (e) => {
   if (brakeFinger !== null) return;
@@ -229,8 +229,8 @@ function frame(now) {
     $("r-altitude").textContent = f.altitude;
     $("r-vs").textContent = f.vs;
   }
-  brakeEl.querySelector(".thumb").style.top = `${(1 - ctl.airbrake) * 100}%`;
-  brakeEl.setAttribute("aria-valuenow", String(Math.round(ctl.airbrake * 100)));
+  brakeEl.querySelector(".thumb").style.top = `${(1 - controls.lever) * 100}%`;
+  brakeEl.setAttribute("aria-valuenow", String(Math.round(controls.lever * 100)));
   if (settings.debug) {
     const info = renderer.info.render;
     const sh = shadow.visible ? `shadow ${shadow.w.toFixed(2)} m edge, ${shadow.radius.toFixed(1)} px` : "shadow off";
