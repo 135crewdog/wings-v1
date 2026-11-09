@@ -44,3 +44,19 @@ test("every JSON file in data/ parses", () => {
     assert.doesNotThrow(() => JSON.parse(readFileSync(f, "utf8")), `${f} does not parse`);
   }
 });
+
+test("every icon the app names exists, at the size it claims", () => {
+  const pngSize = (file) => {
+    const b = readFileSync(join(ROOT, file));
+    assert.equal(b.toString("ascii", 1, 4), "PNG", `${file} is not a PNG`);
+    return [b.readUInt32BE(16), b.readUInt32BE(20)];
+  };
+  const manifest = JSON.parse(read("manifest.webmanifest"));
+  for (const icon of manifest.icons) {
+    const [w, h] = icon.sizes.split("x").map(Number);
+    assert.deepEqual(pngSize(icon.src), [w, h], icon.src);
+  }
+  const touch = read("index.html").match(/rel="apple-touch-icon" href="([^"]+)"/);
+  assert.ok(touch, "index.html has no apple-touch-icon");
+  assert.deepEqual(pngSize(touch[1]), [180, 180], touch[1]);
+});

@@ -2,7 +2,7 @@
 // The cache name carries APP_VERSION (src/version.js); tests/smoke.test.js checks they match.
 // A new version installs, takes over at once and deletes every older Wings cache.
 
-const VERSION = "0.0.1";
+const VERSION = "0.0.2";
 const CACHE = `wings-${VERSION}`;
 
 const FILES = [

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wings icon</title>
+  <!-- Renders the app icon from assets/models/twin-ii-acro.glb. With `npm run serve`, open
+       http://localhost:8000/tools/icon/ and save each PNG into icons/. -->
+  <style>
+    body { margin: 24px; font-family: -apple-system, sans-serif; background: #222; color: #ddd; }
+    .row { display: flex; gap: 24px; align-items: flex-end; flex-wrap: wrap; }
+    figure { margin: 0; text-align: center; }
+    img.masked { border-radius: 22.37%; }
+    a { color: #9cf; }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "../../vendor/three/three.module.js", "three/addons/": "../../vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+  <p id="status">Rendering…</p>
+  <div class="row" id="icons"></div>
+  <script type="module">
+    import { renderIcons } from "./render.js";
+    const icons = await renderIcons();
+    const row = document.getElementById("icons");
+    for (const [size, url] of Object.entries(icons).sort((a, b) => b[0] - a[0])) {
+      const name = size === "1024" ? "icon-1024.png" : `icon-${size}.png`;
+      row.insertAdjacentHTML("beforeend",
+        `<figure><img class="masked" src="${url}" width="${Math.min(size, 512)}"><figcaption>` +
+        `<a download="${name}" href="${url}">${name}</a></figcaption></figure>`);
+    }
+    document.getElementById("status").textContent = "Save each PNG into icons/ (the 1024 one is the master).";
+    window.renderIcons = renderIcons; // for scripted re-renders
+  </script>
+</body>
+</html>
