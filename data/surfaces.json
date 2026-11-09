@@ -1,0 +1,6 @@
+{
+  "about": "Friction coefficients by ground surface, docs/flight-model.md section 11. Dimensionless.",
+  "src": "est: starting values, to be tuned by feel at M3",
+  "grass":    { "mu_roll": 0.05, "mu_side": 0.6, "mu_brake": 0.25, "mu_skid": 0.4 },
+  "pavement": { "mu_roll": 0.02, "mu_side": 0.8, "mu_brake": 0.35, "mu_skid": 0.5 }
+}

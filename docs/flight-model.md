@@ -167,7 +167,8 @@ F_grav = m R(q)ᵀ g_w
 
 Check: with β = 0, `L̂ = (sin α, 0, −cos α)`, which points up and slightly forward. Correct.
 
-Thrust, ground contact and water contact join with their milestones and are documented here first.
+Ground contact is section 11. Thrust and water contact join with their milestones and are documented
+here first.
 
 ## 8. Equations of motion
 
@@ -216,6 +217,11 @@ Each card is `data/aircraft/<id>.json`. Groups and fields:
 | `control` | `elevator` {cm_full_up, cm_full_down}, `aileron` {cl_full, cn_full}, `rudder` {cn_full, cy_full, cl_full} |
 | `devices` | `airbrake` {cd, dclmax, cm} (more device types later) |
 | `engines` | list; empty for a glider |
+| `cg` | `from_nose_m`, `above_nose_m`: the CG's place on the airframe, from the model's origin at the nose tip |
+| `glb` | `file` (the model, `assets/models/<id>.glb`), `origin` (where the model's origin is on the airframe) |
+| `contacts` | list of contact points (section 11), each `name`, `type` (`wheel` or `skid`), `pos_m` (body axes from the CG), `k` (N/m), `c` (N·s/m), and for a wheel `brake` (true when it has one) |
+| `wheel_brake` | `when`: what puts the wheel brakes on (section 11.4): `airbrake_full` for a glider; powered airplanes add their own with the engines |
+| `crash` | `wheel_sink_ms`, `skid_speed_ms`: the touchdown limits of section 11.6 |
 | `limits` | `vne_kmh` or `vne_kt`, plus any other limit speeds and load factors |
 | `targets` | the numbers tests check, each with its mass, tolerance and source |
 | `src` | per group, a map from field to source key (`fm`, `bga`, `fit`, `est`, ...), or one string when the whole group shares a source |
@@ -223,3 +229,112 @@ Each card is `data/aircraft/<id>.json`. Groups and fields:
 Signs on the card follow section 1. Full right pedal gives positive `rudder.cn_full` (nose right) and
 negative `rudder.cy_full` (the fin is pushed left). Adverse aileron yaw gives negative
 `aileron.cn_full` (right roll, nose left).
+
+## 11. Ground contact
+
+The ground pushes on the airplane only through its contact points. Every contact force is a normal
+force and a friction force at a point, so it makes a moment about the CG: a wingtip dropped at walking
+pace swings the glider around, a braked wheel below the CG pitches the nose down. Nothing else holds
+the airplane up, steers it or stops it.
+
+### 11.1 The ground
+
+The world supplies two functions of position: `heightAt(x, y)`, the ground's height above sea level
+(m), and `surfaceAt(x, y)`, a surface name. The ground's outward normal `n` points up. For flat ground,
+`n = (0, 0, −1)` in world axes; sloping terrain joins at M6, with its own normal.
+
+Each surface has friction coefficients, all dimensionless, in `data/surfaces.json`:
+
+| Field | Meaning |
+| --- | --- |
+| `mu_roll` | rolling resistance of a free wheel |
+| `mu_side` | the most sideways grip a wheel's tyre has |
+| `mu_brake` | added along a wheel when its brake is on |
+| `mu_skid` | sliding friction of a skid (a wingtip, the nose, a tail skid) |
+
+### 11.2 Contact points
+
+The card lists contact points (section 10), each fixed in body axes at `r_b` from the CG. A `wheel`
+point is the bottom of the tyre with the gear at rest. A `skid` is any other part that can touch:
+wingtips, the nose. Tyre radius, wheel inertia and gear geometry are not modelled. The spring is the
+tyre and the gear together.
+
+For each point:
+
+```
+r_w = x + R(q) r_b                       position, world
+v_p = R(q) (v + ω × r_b)                 velocity of the point over the ground, world
+d   = heightAt(r_w.x, r_w.y) + r_w.z     penetration below the ground (positive inside it)
+ḋ   = −(v_p · n)                         penetration rate (positive moving in)
+```
+
+### 11.3 Normal force
+
+```
+N = max(0, k d + c ḋ)    when d > 0, otherwise 0
+```
+
+`k` (N/m) and `c` (N·s/m) are the point's stiffness and damping from the card. The force never pulls:
+a point leaving the ground lets go.
+
+### 11.4 Friction
+
+The sliding velocity is the point's velocity along the ground, `v_t = v_p − (v_p · n) n`. Friction
+uses one smooth law: proportional to the slip below a small slip speed `v_slip`, and the full `μ N`
+above it. An airplane then comes to a clean stop instead of jittering about zero.
+
+```
+sat(u) = max(−1, min(1, u))
+v_slip = 0.1 m/s
+```
+
+**Wheels.** The wheel rolls along `e_r`, the body x axis laid flat on the ground:
+`e_r = normalize(x̂_w − (x̂_w · n) n)` with `x̂_w = R(q) (1, 0, 0)`. Across it is `e_s = n × e_r`.
+
+```
+F_roll = −(μ_roll + b μ_brake) N sat((v_t · e_r) / v_slip) e_r
+F_side = −μ_side N sat((v_t · e_s) / v_slip) e_s
+```
+
+`b` is 1 when the wheel has a brake and the brake is on, otherwise 0. The card's `wheel_brake.when`
+says when the brake is on. For a glider it is `airbrake_full`: the airbrake lever at the end of its
+travel, as on many two-seat gliders. Powered airplanes will name their own condition when the engines
+arrive (for example, the throttle at idle). A brake only acts through a wheel's friction, so it does
+nothing in the air.
+
+**Skids.** A skid slides against its velocity:
+
+```
+F_skid = −μ_skid N v_t / max(|v_t|, v_slip)
+```
+
+### 11.5 Force and moment on the airplane
+
+```
+F_w = N n + F_friction                   at each touching point, world
+F_contact = Σ R(q)ᵀ F_w                  body axes
+M_contact = Σ r_b × R(q)ᵀ F_w
+```
+
+They enter the equations of motion (section 8) beside the aerodynamic forces and are evaluated in
+every RK4 stage like them.
+
+**Step size.** Contact is the stiffest part of the model. With `m_e` the mass a point feels (the mass,
+or the inertia about the CG over the arm squared, whichever is smaller), three rates must stay well
+under RK4's limit at 1/120 s, about 330 per second: the spring `√(k / m_e)`, the damper `c / m_e`, and
+the friction `μ N / (v_slip m_e)` at the loads of a firm landing. The Twin II Acro's worst case is a
+wingtip's damper, about 110 per second.
+
+### 11.6 Crash
+
+A crash is an event, not a force. After each step, a point that was not touching (d ≤ 0) and now is
+(d > 0) has touched down. Its speeds are the ones it arrived with, taken from the state at the start
+of that step, the last one before contact: by the end of the step the contact's damping has already
+slowed it, by up to a tenth for a firm arrival. The flight ends when:
+
+- a wheel touches down with `ḋ` over the card's `crash.wheel_sink_ms`, or
+- a skid touches down with `|v_t|` over the card's `crash.skid_speed_ms`.
+
+A wingtip settling at the end of a landing roll touches down slowly and is not a crash. After a
+crash the sim no longer steps.
+

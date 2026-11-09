@@ -131,15 +131,16 @@ export function polar(c, speeds, opts = {}) {
 }
 
 /**
- * The 6-DOF state of a trimmed glide (from glide()) heading north at an altitude (m):
- * pitch θ = α − γ, body velocity V (cos α, 0, sin α), no rates.
+ * The 6-DOF state of a trimmed glide (from glide()) at an altitude (m): pitch θ = α − γ, body
+ * velocity V (cos α, 0, sin α), no rates. Options: heading (rad, 0 north, π/2 east) and position
+ * north and east (m).
  */
-export function glideState(trim, altitude) {
+export function glideState(trim, altitude, { heading = 0, north = 0, east = 0 } = {}) {
   const { V, alpha, gamma } = trim;
   return {
-    x: [0, 0, -altitude],
+    x: [north, east, -altitude],
     v: [V * Math.cos(alpha), 0, V * Math.sin(alpha)],
-    q: qfromEuler(0, alpha - gamma, 0),
+    q: qfromEuler(0, alpha - gamma, heading),
     omega: [0, 0, 0],
   };
 }

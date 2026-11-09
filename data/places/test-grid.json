@@ -1,0 +1,17 @@
+{
+  "id": "test-grid",
+  "name": "Test grid",
+  "about": "M2's flat test world: sea level everywhere, grass except one paved runway along north–south at the origin.",
+  "ground": { "height_m": 0, "surface": "grass" },
+  "runways": [
+    { "name": "18/36", "centre_m": [0, 0], "heading_deg": 0, "length_m": 1000, "width_m": 30, "surface": "pavement" }
+  ],
+  "starts": [
+    { "id": "high", "name": "High", "runway": "18/36", "along_m": -500, "across_m": 0, "height_m": 1000, "heading_deg": 0, "speed_kmh": 95,
+      "about": "1,000 m above the south end of the runway, heading north" },
+    { "id": "circuit", "name": "Circuit", "runway": "18/36", "along_m": 0, "across_m": -600, "height_m": 300, "heading_deg": 180, "speed_kmh": 95,
+      "about": "300 m on a left-hand downwind for runway 36: abeam the runway's middle, 600 m to the west, heading south" },
+    { "id": "final", "name": "Final", "runway": "18/36", "along_m": -2500, "across_m": 0, "height_m": 100, "heading_deg": 0, "speed_kmh": 95,
+      "about": "100 m up on a 2 km straight-in final to runway 36: 2 km before the threshold, a 2.9° glidepath" }
+  ]
+}

@@ -45,6 +45,24 @@ test("every JSON file in data/ parses", () => {
   }
 });
 
+test("no JSON object in data/ repeats a key (JSON.parse would silently keep the last)", () => {
+  for (const f of filesUnder(join(ROOT, "data")).filter((x) => x.endsWith(".json"))) {
+    // Walk the text: at each object's depth, collect its keys.
+    const text = readFileSync(f, "utf8");
+    const stack = [];
+    const re = /"((?:[^"\\]|\\.)*)"\s*(:)?|[{}\[\]]/g;
+    for (let m; (m = re.exec(text)); ) {
+      if (m[0] === "{") stack.push(new Set());
+      else if (m[0] === "[") stack.push(null);
+      else if (m[0] === "}" || m[0] === "]") stack.pop();
+      else if (m[2] && stack.at(-1)) {
+        assert.ok(!stack.at(-1).has(m[1]), `${f}: key "${m[1]}" appears twice in one object`);
+        stack.at(-1).add(m[1]);
+      }
+    }
+  }
+});
+
 test("every icon the app names exists, at the size it claims", () => {
   const pngSize = (file) => {
     const b = readFileSync(join(ROOT, file));
@@ -59,4 +77,23 @@ test("every icon the app names exists, at the size it claims", () => {
   const touch = read("index.html").match(/rel="apple-touch-icon" href="([^"]+)"/);
   assert.ok(touch, "index.html has no apple-touch-icon");
   assert.deepEqual(pngSize(touch[1]), [180, 180], touch[1]);
+});
+
+test("the service worker caches every file the app needs, and each one exists", () => {
+  const sw = read("sw.js");
+  const files = [...sw.match(/const FILES = \[([\s\S]*?)\];/)[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  for (const f of files) {
+    if (f === "./") continue;
+    assert.doesNotThrow(() => statSync(join(ROOT, f)), `sw.js caches ${f}, which doesn't exist`);
+  }
+  const needed = ["src", "data"].flatMap((d) => filesUnder(join(ROOT, d))).map((f) => f.slice(ROOT.length).replace(/^[\/]/, ""));
+  for (const f of needed) assert.ok(files.includes(f), `sw.js doesn't cache ${f}`);
+  assert.ok(files.includes("assets/models/twin-ii-acro.glb"), "sw.js doesn't cache the model");
+});
+
+test("the deploy publishes everything the service worker caches", () => {
+  const cp = read(".github/workflows/deploy.yml").match(/cp -r ([^\n]+) _site\//)[1].split(/\s+/);
+  const sw = read("sw.js");
+  const tops = new Set([...sw.match(/const FILES = \[([\s\S]*?)\];/)[1].matchAll(/"([^"]+)"/g)].map((m) => m[1].split("/")[0]).filter((t) => t && t !== "."));
+  for (const t of tops) assert.ok(cp.includes(t), `the deploy doesn't copy ${t}`);
 });
