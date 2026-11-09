@@ -35,7 +35,9 @@ function fitToScreen() {
   const w = canvas.clientWidth, h = canvas.clientHeight;
   if (w === 0 || h === 0) return;
   const pr = renderer.getPixelRatio();
-  if (canvas.width !== Math.round(w * pr) || canvas.height !== Math.round(h * pr)) renderer.setSize(w, h, false);
+  // floor, as renderer.setSize does: with a fractional pixel ratio, round would never match and
+  // would resize (and clear) the drawing buffer every frame
+  if (canvas.width !== Math.floor(w * pr) || canvas.height !== Math.floor(h * pr)) renderer.setSize(w, h, false);
   if (Math.abs(chase.camera.aspect - w / h) > 1e-6) {
     chase.camera.aspect = w / h;
     chase.camera.updateProjectionMatrix();
