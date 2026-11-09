@@ -2,7 +2,7 @@
 
 ## 0.0.2
 
-- A new app icon: the Twin II Acro banking over a cloud deck, rendered from its 3D model
+- A new app icon: the Twin II Acro banking across a blue gradient, rendered from its 3D model
   (tools/icon/). Re-add Wings to the home screen to see it; iOS keeps the icon it installed with.
 
 ## 0.0.1

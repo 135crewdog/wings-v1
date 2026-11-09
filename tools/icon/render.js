@@ -1,6 +1,5 @@
-// Renders the app icon from the Twin II Acro model: the glider in a gentle banked turn against an
-// evening sky. Runs in a browser (tools/icon/index.html); returns PNG data URLs per size.
-// The look lives in VIEW and paintSky; change them, re-render, and replace icons/.
+// Renders the app icon from the Twin II Acro model: the glider on a plain blue gradient. Runs in a browser (tools/icon/index.html); returns PNG data URLs per size.
+// The look lives in VIEW (pose, framing, gradient); change it, re-render, and replace icons/.
 
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -19,8 +18,8 @@ export const VIEW = {
   fov: 55, // wide enough for some perspective: the near wing and the canopy loom
   fill: 1.08, // the silhouette's larger side as a fraction of the icon; over 1 crops the wingtips
   offset: [0.0, 0.0], // shift of the glider's centre, fraction of the icon (x right, y down)
-  sun: [0.86, 0.13], // the sun's glow, fraction of the icon (x right, y down)
-  clouds: true, // a soft bank of cloud tops low in the frame
+  sky: ["#0b3d91", "#4fa3e8"], // gradient colours, top to bottom
+  angle: 0, // gradient tilt, degrees (0: straight down)
 };
 
 let model = null;
@@ -38,79 +37,14 @@ async function loadModel() {
   return model;
 }
 
-/** The sky behind the glider: deep blue overhead, warm haze low down, the sun's glow upper right. */
+/** The background: one blue gradient, `view.sky` from top to bottom, tilted by `view.angle` degrees. */
 function paintSky(g, n, view) {
-  const sky = g.createLinearGradient(0, 0, 0, n);
-  sky.addColorStop(0.0, "#123f7a");
-  sky.addColorStop(0.45, "#2f78bf");
-  sky.addColorStop(0.78, "#8fbfe3");
-  sky.addColorStop(1.0, "#f3d7a6");
+  const t = (view.angle * Math.PI) / 180;
+  const dx = (Math.sin(t) * n) / 2, dy = (Math.cos(t) * n) / 2;
+  const sky = g.createLinearGradient(n / 2 - dx, n / 2 - dy, n / 2 + dx, n / 2 + dy);
+  view.sky.forEach((c, i) => sky.addColorStop(i / (view.sky.length - 1), c));
   g.fillStyle = sky;
   g.fillRect(0, 0, n, n);
-
-  // The sun: a bright core and a tight warm halo, added as light so the blue stays blue around it.
-  const [sx, sy] = view.sun;
-  g.globalCompositeOperation = "lighter";
-  const halo = g.createRadialGradient(n * sx, n * sy, 0, n * sx, n * sy, n * 0.32);
-  halo.addColorStop(0.0, "rgba(255, 236, 190, 0.55)");
-  halo.addColorStop(0.25, "rgba(255, 214, 150, 0.22)");
-  halo.addColorStop(1.0, "rgba(255, 200, 130, 0)");
-  g.fillStyle = halo;
-  g.fillRect(0, 0, n, n);
-  g.globalCompositeOperation = "source-over";
-  const core = g.createRadialGradient(n * sx, n * sy, 0, n * sx, n * sy, n * 0.06);
-  core.addColorStop(0.0, "rgba(255, 255, 250, 1)");
-  core.addColorStop(0.55, "rgba(255, 250, 230, 0.95)");
-  core.addColorStop(1.0, "rgba(255, 240, 200, 0)");
-  g.fillStyle = core;
-  g.fillRect(0, 0, n, n);
-  if (view.clouds) paintClouds(g, n);
-}
-
-/** A bank of cloud tops low in the frame, lit from the sun's side. Fixed, not random. */
-function paintClouds(g, n) {
-  // A small deterministic generator, so the clouds are the same on every render.
-  let seed = 7;
-  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-
-  // Each layer is one silhouette (a union of circles) filled with one vertical gradient, so the
-  // outline is cauliflower-like but the body reads as a single mass, not as separate balls.
-  const layers = [
-    // top of the layer, puff radius, colours top → bottom, edge softness: back layer hazier
-    { top: 0.87, r: 0.035, colours: ["#e9eef2", "#d9dde0"], blur: 2.5 },
-    { top: 0.9, r: 0.05, colours: ["#fbf6ee", "#e8d9c6"], blur: 1.5 },
-  ];
-  for (const L of layers) {
-    const shape = new Path2D();
-    for (let x = -0.05; x < 1.08; x += L.r * (0.7 + 0.6 * rand())) {
-      const r = L.r * (0.6 + 0.9 * rand());
-      const y = L.top + r * (0.9 + 0.8 * rand());
-      shape.moveTo(n * (x + r), n * y);
-      shape.arc(n * x, n * y, n * r, 0, Math.PI * 2);
-    }
-    shape.rect(0, n * (L.top + L.r * 1.6), n, n);
-    const fill = g.createLinearGradient(0, n * L.top, 0, n);
-    fill.addColorStop(0, L.colours[0]);
-    fill.addColorStop(1, L.colours[1]);
-    g.save();
-    g.filter = `blur(${(L.blur * n) / 1024}px)`;
-    g.fillStyle = fill;
-    g.fill(shape);
-    g.restore();
-  }
-  // Sun-side highlights along the front layer's tops.
-  seed = 11;
-  g.save();
-  g.filter = `blur(${(3 * n) / 1024}px)`;
-  for (let x = 0; x < 1.05; x += 0.07 + 0.05 * rand()) {
-    const r = 0.03 + 0.03 * rand();
-    const hl = g.createRadialGradient(n * (x + r * 0.3), n * (0.915 - r * 0.2), 0, n * x, n * 0.93, n * r * 1.4);
-    hl.addColorStop(0, "rgba(255, 255, 252, 0.7)");
-    hl.addColorStop(1, "rgba(255, 255, 252, 0)");
-    g.fillStyle = hl;
-    g.fillRect(n * (x - r * 1.5), n * (0.93 - r * 1.5), n * r * 3, n * r * 3);
-  }
-  g.restore();
 }
 
 /** The glider alone on a transparent canvas, framed to fill `view.fill` of the square. */
@@ -130,7 +64,7 @@ async function renderGlider(view) {
   scene.add(holder);
   scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x6b5a45, 1.4));
   const sunLight = new THREE.DirectionalLight(0xfff1dc, 3.2);
-  sunLight.position.set(6, 9, -4); // upper right, slightly ahead: matches the painted sun
+  sunLight.position.set(6, 9, -4); // upper right, slightly ahead
   scene.add(sunLight);
   const rim = new THREE.DirectionalLight(0xbfd8ff, 0.8);
   rim.position.set(-8, 2, 6);
