@@ -41,9 +41,10 @@ $("version").textContent = `Wings ${APP_VERSION}`;
 let card, place, ground, world, aircraft;
 let sim = null, prev = null, startId = "high", trimElevator = 0;
 let mode = "menu"; // menu | flying | paused | crashed
+let ready = false; // the card, the place and the model have all loaded
 let acc = 0;
 
-const controls = createControls({ onRestart: () => mode !== "menu" && start(startId), onFlip: () => pause("Turned around") });
+const controls = createControls({ onRestart: () => ready && mode !== "menu" && start(startId), onFlip: () => pause("Turned around") });
 
 function start(id) {
   startId = id;
@@ -92,11 +93,11 @@ for (const b of document.querySelectorAll("[data-start]")) {
     ask.then((ok) => {
       $("menu-status").textContent = ok ? "Tilt on" : "No tilt: use a gamepad or the keyboard";
     });
-    if (card) start(b.dataset.start);
+    if (ready) start(b.dataset.start);
   });
 }
 $("b-menu").addEventListener("click", () => { mode = "menu"; show(); });
-$("b-restart").addEventListener("click", () => start(startId));
+$("b-restart").addEventListener("click", () => ready && start(startId));
 $("b-calibrate").addEventListener("click", () => controls.tilt.calibrate());
 $("b-hud").addEventListener("click", () => { settings.hud = !settings.hud; saveSettings(); show(); });
 $("b-debug").addEventListener("click", () => { settings.debug = !settings.debug; saveSettings(); show(); });
@@ -212,6 +213,8 @@ Promise.all([getJSON("data/aircraft/twin-ii-acro.json"), getJSON("data/places/te
     // a still view of the field behind the menu
     sim = new Sim(card, glideState(glide(card, 95 / 3.6, { altitude: 60 }), 60, { north: -900 }), { ground });
     prev = sim.state;
+    ready = true; // only now may a start begin: nothing after this replaces the flight
+    for (const b of document.querySelectorAll("[data-start]")) b.disabled = false;
     $("menu-status").textContent = "Choose a start. The first tap asks for motion access.";
     renderer.setAnimationLoop(frame);
   })

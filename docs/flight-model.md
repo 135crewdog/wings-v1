@@ -326,7 +326,9 @@ wingtip's damper, about 110 per second.
 ### 11.6 Crash
 
 A crash is an event, not a force. After each step, a point that was not touching (d ≤ 0) and now is
-(d > 0) has touched down. The flight ends when:
+(d > 0) has touched down. Its speeds are the ones it arrived with, taken from the state at the start
+of that step, the last one before contact: by the end of the step the contact's damping has already
+slowed it, by up to a tenth for a firm arrival. The flight ends when:
 
 - a wheel touches down with `ḋ` over the card's `crash.wheel_sink_ms`, or
 - a skid touches down with `|v_t|` over the card's `crash.skid_speed_ms`.

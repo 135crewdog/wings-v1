@@ -70,18 +70,20 @@ export function touching(card, state, ground) {
 }
 
 /**
- * The touchdown check (§11.6), after a step: a point that wasn't touching and now is has touched
- * down. Returns null, or the crash: { point, reason, value }.
+ * The touchdown check (§11.6), after a step from `before` to `after`: a point that wasn't touching
+ * and now is has touched down. Its speeds are the ones it arrived with, measured in `before`, the
+ * last state before contact; within the step the contact's damping has already slowed it.
+ * Returns null, or the crash: { point, reason, value }.
  */
-export function crashCheck(card, state, ground, wasTouching) {
+export function crashCheck(card, before, after, ground, wasTouching) {
   if (!ground) return null;
   for (let i = 0; i < card.contacts.length; i++) {
     const p = card.contacts[i];
-    const ps = pointState(state, p.r, ground);
-    if (ps.d <= 0 || wasTouching[i]) continue;
-    if (p.wheel && ps.dDot > card.crash.wheelSink)
-      return { point: p.name, reason: "wheel sink rate", value: ps.dDot };
-    const slide = Math.hypot(ps.vw[0], ps.vw[1]);
+    if (wasTouching[i] || pointState(after, p.r, ground).d <= 0) continue;
+    const arrival = pointState(before, p.r, ground);
+    if (p.wheel && arrival.dDot > card.crash.wheelSink)
+      return { point: p.name, reason: "wheel sink rate", value: arrival.dDot };
+    const slide = Math.hypot(arrival.vw[0], arrival.vw[1]);
     if (!p.wheel && slide > card.crash.skidSpeed)
       return { point: p.name, reason: "skid speed along the ground", value: slide };
   }

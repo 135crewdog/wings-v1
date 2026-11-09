@@ -57,6 +57,7 @@
     .screen p { margin: 0; max-width: 520px; opacity: 0.92; font-size: 15px; line-height: 1.35; }
     .screen .row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
     .screen .row button { font-size: 17px; padding: 12px 20px; min-width: 110px; }
+    .screen button:disabled { opacity: 0.45; }
     .screen small { opacity: 0.75; }
     [hidden] { display: none !important; }
     #rotate { display: none; z-index: 10; background: #2e6aa8; }
@@ -95,9 +96,9 @@
       toward you to pull, turn it to bank. The slider on the right is the airbrake; pull it to the
       bottom for the wheel brake.</p>
     <div class="row">
-      <button data-start="high">High · 1,000 m</button>
-      <button data-start="circuit">Circuit · 300 m</button>
-      <button data-start="final">Final · 2 km out</button>
+      <button data-start="high" disabled>High · 1,000 m</button>
+      <button data-start="circuit" disabled>Circuit · 300 m</button>
+      <button data-start="final" disabled>Final · 2 km out</button>
     </div>
     <small id="menu-status">Loading…</small>
     <small id="version"></small>

@@ -61,10 +61,11 @@ export class Sim {
     if (this.crashed) return this.state;
     const ctl = normalizeControls(controls);
     const forces = (s, time) => totalForces(this.card, s, time, ctl, this.wind, this.ground);
+    const before = this.state;
     this.state = rk4Step(this.state, this.t, DT, forces, this.card.m, this.card.I);
     this.t += DT;
     if (this.ground) {
-      this.crashed = crashCheck(this.card, this.state, this.ground, this.touching);
+      this.crashed = crashCheck(this.card, before, this.state, this.ground, this.touching);
       this.touching = touching(this.card, this.state, this.ground);
     }
     return this.state;
