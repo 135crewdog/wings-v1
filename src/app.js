@@ -211,8 +211,7 @@ function frame(now) {
 
   pos.fromArray(nedToThree(x));
   chase.update(pos, aircraft.object.quaternion, dt, place.ground.height_m);
-  const heading = Math.atan2(2 * (q[0] * q[3] + q[1] * q[2]), 1 - 2 * (q[2] * q[2] + q[3] * q[3]));
-  world.shadow(pos.toArray(), heading, -x[2] - place.ground.height_m);
+  const shadow = world.shadow(pos.toArray(), card.b, card.cbar);
   renderer.render(world.scene, chase.camera);
 
   if (settings.hud) {
@@ -225,7 +224,8 @@ function frame(now) {
   brakeEl.setAttribute("aria-valuenow", String(Math.round(ctl.airbrake * 100)));
   if (settings.debug) {
     const info = renderer.info.render;
-    $("debug").textContent = `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms · ${info.calls} draws · ${stepsLast} steps · ${controls.source}`;
+    const sh = shadow.visible ? `shadow ${shadow.w.toFixed(2)} m edge, ${shadow.radius.toFixed(1)} px` : "shadow off";
+    $("debug").textContent = `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms · ${info.calls} draws · ${sh} · ${stepsLast} steps · ${controls.source}`;
   }
 }
 

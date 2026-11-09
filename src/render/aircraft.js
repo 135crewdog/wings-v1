@@ -9,6 +9,7 @@ import { surfacePositions } from "./surfaces.js";
 export async function loadAircraft(url, cg) {
   const gltf = await new GLTFLoader().loadAsync(url);
   const root = gltf.scene;
+  root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
   const parts = {}; // name → { node, extras, rest position, rest quaternion }
   root.traverse((o) => {
     const x = o.userData;

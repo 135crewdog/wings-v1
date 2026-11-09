@@ -3,6 +3,28 @@
 
 import * as THREE from "three";
 import { nedToThree } from "./frames.js";
+import { SUN } from "./sun.js";
+import { groundSpot, peakCover, penumbra, shadowFrame, slantDistance, SHADOW_GONE } from "./shadow-math.js";
+
+const SHADOW_MAP = 1024; // texels across the shadow camera's box
+
+// Three's PCF shadow averages 5 samples over its blur disc; 16 keep a wide, soft edge smooth.
+// The samples are Vogel-disk points, spread evenly over the disc's area: their average is the
+// fraction of the sun's disc the airplane hides (shadow-math.js).
+const FIVE = `shadow = (
+					texture( shadowMap, vec3( shadowCoord.xy + vogelDiskSample( 0, 5, phi ) * radius, shadowCoord.z ) ) +
+					texture( shadowMap, vec3( shadowCoord.xy + vogelDiskSample( 1, 5, phi ) * radius, shadowCoord.z ) ) +
+					texture( shadowMap, vec3( shadowCoord.xy + vogelDiskSample( 2, 5, phi ) * radius, shadowCoord.z ) ) +
+					texture( shadowMap, vec3( shadowCoord.xy + vogelDiskSample( 3, 5, phi ) * radius, shadowCoord.z ) ) +
+					texture( shadowMap, vec3( shadowCoord.xy + vogelDiskSample( 4, 5, phi ) * radius, shadowCoord.z ) )
+				) * 0.2;`;
+const SIXTEEN = `shadow = 0.0;
+				for ( int k = 0; k < 16; k ++ ) {
+					shadow += texture( shadowMap, vec3( shadowCoord.xy + vogelDiskSample( k, 16, phi ) * radius, shadowCoord.z ) );
+				}
+				shadow *= 0.0625;`;
+if (!THREE.ShaderChunk.shadowmap_pars_fragment.includes(FIVE)) throw new Error("Three's PCF shadow code changed: update world.js");
+THREE.ShaderChunk.shadowmap_pars_fragment = THREE.ShaderChunk.shadowmap_pars_fragment.replace(FIVE, SIXTEEN);
 
 const SKY = 0x8fbfe6;
 const GROUND_SIZE = 60000; // m, far beyond what can be seen from 1,000 m in the haze
@@ -69,26 +91,23 @@ function runwayTexture(rw, renderer) {
   }, renderer);
 }
 
-/** A soft cross of wing and fuselage, the glider's shadow when the sun is high. */
-function shadowTexture(renderer) {
-  return canvasTexture(256, 128, (g, w, h) => {
-    g.filter = "blur(6px)";
-    g.fillStyle = "rgba(0, 0, 0, 1)";
-    g.fillRect(8, h * 0.42, w - 16, h * 0.16); // wing
-    g.fillRect(w * 0.44, h * 0.15, w * 0.12, h * 0.75); // fuselage, nose up the texture
-    g.fillRect(w * 0.36, h * 0.82, w * 0.28, h * 0.07); // tailplane
-  }, renderer);
-}
-
 export function createWorld(renderer, place) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(SKY);
   scene.fog = new THREE.Fog(SKY, 3000, 22000);
 
   scene.add(new THREE.HemisphereLight(0xdfefff, 0x55603f, 1.5));
+  // The sun casts the airplane's real shadow: its own mesh, through a shadow map. The shadow camera
+  // is a tight box re-centred every frame where the shadow falls (shadow()), so a small map stays
+  // sharp at any height and anywhere in the world. Only the airplane casts.
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   const sun = new THREE.DirectionalLight(0xfff3e0, 2.6);
-  sun.position.set(0.4, 1, 0.3);
-  scene.add(sun);
+  sun.position.set(...SUN.toward);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(SHADOW_MAP, SHADOW_MAP);
+  sun.shadow.bias = 0; // the ground receives and never casts; the airplane casts and never receives
+  scene.add(sun, sun.target);
 
   const height = place.ground.height_m;
   // The flat layers (ground, runway, shadow) don't write depth and draw first, in that order, so they
@@ -103,6 +122,7 @@ export function createWorld(renderer, place) {
   const groundMesh = flat(grass, -3, new THREE.Mesh(new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE), grass));
   groundMesh.rotation.x = -Math.PI / 2;
   groundMesh.position.y = height;
+  groundMesh.receiveShadow = true;
   scene.add(groundMesh);
 
   for (const rw of place.runways) {
@@ -112,22 +132,36 @@ export function createWorld(renderer, place) {
     mesh.rotation.z = (-rw.heading_deg * Math.PI) / 180;
     const c = nedToThree([rw.centre_m[0], rw.centre_m[1], -height]);
     mesh.position.set(c[0], c[1], c[2]);
+    mesh.receiveShadow = true;
     scene.add(mesh);
   }
 
-  const dark = new THREE.MeshBasicMaterial({ map: shadowTexture(renderer), transparent: true });
-  const shadow = flat(dark, -1, new THREE.Mesh(new THREE.PlaneGeometry(17.5, 8.5), dark));
-  shadow.rotation.order = "YXZ";
-  scene.add(shadow);
-
   return {
     scene,
-    /** Moves the shadow under the CG (Three axes), turned with the heading, fading with height. */
-    shadow(cg, heading, heightAboveGround) {
-      shadow.position.set(cg[0], height, cg[2]);
-      shadow.rotation.set(-Math.PI / 2, -heading, 0, "YXZ");
-      shadow.material.opacity = 0.45 * Math.max(0, 1 - heightAboveGround / 80);
-      shadow.visible = shadow.material.opacity > 0.01;
+    /**
+     * Aim the sun's shadow at the airplane: `cg` in Three axes, `size` its span (m), `chord` its mean
+     * chord (m). The edge blurs by the sun's disc at the distance to the ground; when the airplane
+     * can no longer hide enough of the sun to be seen, the shadow pass stops.
+     */
+    shadow(cg, size, chord) {
+      const d = slantDistance(cg[1] - height, SUN.toward);
+      const w = penumbra(d, SUN.angularDiameter);
+      const visible = peakCover(chord, size, w) >= SHADOW_GONE;
+      renderer.shadowMap.autoUpdate = visible;
+      sun.shadow.intensity = visible ? 1 : 0;
+      if (!visible) return { d, w, visible };
+      const spot = groundSpot(cg, SUN.toward, height);
+      const f = shadowFrame(size, w, SHADOW_MAP);
+      sun.target.position.set(...spot);
+      const back = d + size + 20; // the light sits beyond the airplane, along the sun's rays
+      sun.position.set(spot[0] + SUN.toward[0] * back, spot[1] + SUN.toward[1] * back, spot[2] + SUN.toward[2] * back);
+      const cam = sun.shadow.camera;
+      cam.left = -f.half; cam.right = f.half; cam.top = f.half; cam.bottom = -f.half;
+      cam.near = 1;
+      cam.far = back + 10;
+      cam.updateProjectionMatrix();
+      sun.shadow.radius = Math.max(1, f.radius);
+      return { d, w, visible, radius: f.radius, half: f.half };
     },
   };
 }
