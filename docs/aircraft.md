@@ -35,6 +35,20 @@ Undecided: a B-26 (Martin Marauder or Douglas Invader), added or replacing the K
 A target is never loosened to make a test pass. If a published figure looks wrong, note it in the
 target and ask.
 
+## The hangar
+
+`hangar.html`, in the deployed app, shows every airplane on the roster (`data/roster.json`) from the
+same `src/sim/` code that flies it: no copy of the physics. For each: the planform drawn from the card
+(span, area, taper, quarter-chord sweep), the figures of `docs/flight-model.md` sections 9 and 12 in
+pilot terms and the units of the HUD (knots, feet per minute, degrees per second), each named for
+exactly what it is, and its energy-manoeuvrability diagram. The landing-configuration stall is with
+the airbrakes open for a glider and with landing flaps for an airplane that has them. Figures an
+airplane doesn't have (a glider's best climb) say so. No arcade ratings.
+
+Its tuning panel moves the main card numbers with sliders and redraws every figure live. Edits stay in
+that browser (`localStorage`), never change the card the app flies, and can be copied as the card's
+JSON to paste into `data/aircraft/<id>.json` with a source note.
+
 ## Grob G 103 A Twin II Acro
 
 A two-seat training glider with strengthened spar caps and steel pushrods for basic aerobatics.

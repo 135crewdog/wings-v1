@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Wings hangar</title>
+  <meta name="theme-color" content="#14243a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <style>
+    :root { --bg: #14243a; --card: #1c3150; --ink: #eef3fa; --dim: #9fb3cc; --line: rgba(255,255,255,0.14); --accent: #6cb4ff; --warn: #ffb35c; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+    main { max-width: 1100px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 32px); }
+    header { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+    header h1 { margin: 0; font-size: 26px; }
+    header a { color: var(--accent); text-decoration: none; }
+    .airplane { background: var(--card); border-radius: 16px; padding: 16px; margin-top: 18px; }
+    .airplane h2 { margin: 0 0 2px; font-size: 22px; }
+    .airplane .sub { color: var(--dim); margin-bottom: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    svg { width: 100%; height: auto; display: block; }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    td { padding: 4px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+    td:last-child { text-align: right; white-space: nowrap; padding-left: 12px; }
+    h3 { margin: 14px 0 6px; font-size: 15px; color: var(--dim); font-weight: 600; letter-spacing: 0.02em; }
+    .fail { color: var(--warn); }
+    details { margin-top: 14px; }
+    summary { cursor: pointer; color: var(--accent); }
+    .sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 18px; margin-top: 10px; }
+    .slider label { display: flex; justify-content: space-between; font-size: 13px; color: var(--dim); }
+    .slider input { width: 100%; }
+    .buttons { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    button { font: inherit; color: var(--ink); background: rgba(255,255,255,0.1); border: 1px solid var(--line); border-radius: 10px; padding: 7px 12px; }
+    .note { color: var(--dim); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header><h1>Hangar</h1><span class="note">Figures from the same simulation that flies the airplanes. Sea level, standard day.</span><a href="./">← Fly</a></header>
+    <div id="airplanes"><p class="note">Loading…</p></div>
+  </main>
+  <script type="module" src="src/ui/hangar.js"></script>
+</body>
+</html>

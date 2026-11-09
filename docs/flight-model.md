@@ -200,6 +200,14 @@ flight manual's indicated speeds can be compared directly.
   at its trim value (as if trimmed with the trim lever) and everything else neutral. It must stay
   within 2 km/h and 0.5° of the trimmed state. This proves the trim and the integrator agree.
 
+- **Turns:** in a level turn at load factor `n` and speed V, the turn rate is `g √(n² − 1) / V`. The
+  load factor available at V is the lift limit, `½ ρ V² S CL_peak / W`, or the card's `g_max`,
+  whichever is less. The **maximum instantaneous turn rate** is the highest turn rate over V; it is at
+  the **corner speed** `Vs √g_max`, where the two limits meet. The **maximum sustained turn rate** is
+  the highest turn rate at which thrust equals drag; an airplane without an engine has none.
+- **Energy-manoeuvrability diagram:** turn rate against speed, from the stall to VNE: the lift limit,
+  the load limit (`g_max`), the sustained turn curve (with an engine) and VNE.
+
 Handling figures are section 12; spins are section 13.
 
 ## 10. The card
@@ -229,6 +237,9 @@ Each card is `data/aircraft/<id>.json`. Groups and fields:
 Signs on the card follow section 1. Full right pedal gives positive `rudder.cn_full` (nose right) and
 negative `rudder.cy_full` (the fin is pushed left). Adverse aileron yaw gives negative
 `aileron.cn_full` (right roll, nose left).
+
+`wing.sweep_deg` is the sweep of the quarter-chord line and `wing.taper` the tip chord over the root
+chord; with the area and span they give the planform (root chord `2S / (b (1 + taper))`).
 
 ## 11. Ground contact
 
