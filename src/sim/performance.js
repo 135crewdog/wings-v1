@@ -39,3 +39,14 @@ export function instantaneousTurns(card, { altitude = 0, step = 0.5 } = {}) {
   }
   return out;
 }
+
+/**
+ * The maximum instantaneous turn rate from the stall to VNE (§9): at the corner, or at VNE when the
+ * corner is above it. { V (m/s), rate (rad/s), atCorner }.
+ */
+export function maxInstantaneousTurn(card, { altitude = 0 } = {}) {
+  const corner = cornerSpeed(card, { altitude });
+  if (corner.V <= card.vne) return { ...corner, atCorner: true };
+  const V = card.vne;
+  return { V, rate: turnRate(loadFactorAvailable(card, V, { altitude }), V), atCorner: false };
+}

@@ -80,3 +80,15 @@ test("the full sim flies the phugoid the linearization predicts", (t) => {
   assert.ok(Math.abs(period / m.phugoid.period - 1) < 0.03, "period");
   assert.ok(Math.abs(zeta - m.phugoid.zeta) < 0.01, "damping");
 });
+
+test("all four lateral roots real: the Dutch roll is the overdamped middle pair (§12.1)", () => {
+  const json = JSON.parse(readFileSync(new URL("../data/aircraft/twin-ii-acro.json", import.meta.url)));
+  json.stability.cnr = -0.18;
+  json.stability.cn_beta = 0.015;
+  const m = modes(loadCard(json), 95 / 3.6);
+  assert.ok(m.dutchRoll.zeta >= 1, `ζ ${m.dutchRoll.zeta}`);
+  assert.ok(m.rollMode.tau > 0 && m.rollMode.tau < 1);
+  const [a, b] = m.dutchRoll.roots;
+  assert.equal(a.im, 0);
+  assert.ok(Math.abs(a.re) < Math.abs(m.rollMode.lambda) && Math.abs(b.re) > Math.abs(m.spiral.lambda));
+});

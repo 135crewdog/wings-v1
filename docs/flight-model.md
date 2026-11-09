@@ -215,8 +215,9 @@ flight manual's indicated speeds can be compared directly.
 
 - **Turns:** in a level turn at load factor `n` and speed V, the turn rate is `g √(n² − 1) / V`. The
   load factor available at V is the lift limit, `½ ρ V² S CL_peak / W`, or the card's `g_max`,
-  whichever is less. The **maximum instantaneous turn rate** is the highest turn rate over V; it is at
-  the **corner speed** `Vs √g_max`, where the two limits meet. The **maximum sustained turn rate** is
+  whichever is less. The **maximum instantaneous turn rate** is the highest turn rate over V from the
+  stall to VNE; it is at the **corner speed** `Vs √g_max`, where the two limits meet, or at VNE when
+  the corner is above it. The **maximum sustained turn rate** is
   the highest turn rate at which thrust equals drag; an airplane without an engine has none.
 - **Energy-manoeuvrability diagram:** turn rate against speed, from the stall to VNE: the lift limit,
   the load limit (`g_max`), the sustained turn curve (with an engine) and VNE.
@@ -390,14 +391,16 @@ At each of the card's `speeds` (approach and cruise), sea level, airbrakes close
 | spiral | the slower lateral real root λ | time to double ln 2/λ when λ > 0, to half ln 2/(−λ) when λ < 0 |
 
 For a pair `λ = σ ± iω_d`, `ω = |λ|` and `ζ = −σ / ω`. A pair of real roots counts as an overdamped
-mode with `ω = √(λ₁λ₂)` and `ζ = −(λ₁ + λ₂) / (2ω)`.
+mode with `ω = √(λ₁λ₂)` and `ζ = −(λ₁ + λ₂) / (2ω)`. When all four lateral roots are real, the
+Dutch roll is overdamped: it is the middle two, between the roll mode (the fastest) and the spiral
+(the slowest).
 
 The linearization is checked against the full sim: a small speed step from trim, flown for a few
 minutes, must show the phugoid's period and damping (`tests/handling.test.js`).
 
 ### 12.2 Roll performance
 
-Flown in the 6-DOF sim at each speed, rudder neutral and no assists:
+Flown in the 6-DOF sim at each speed, sea level, rudder neutral and no assists:
 
 - **Bank-to-bank time:** from a steady 45° turn one way, full aileron the other way; the time to reach
   45° the other way.

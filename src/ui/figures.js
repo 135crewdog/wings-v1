@@ -4,7 +4,7 @@
 import { loadCard } from "../sim/card.js";
 import { bestGlide, minSink, stallSpeed } from "../sim/trim.js";
 import { check, modes, rollPerformance } from "../sim/handling.js";
-import { cornerSpeed, instantaneousTurns, turnRate } from "../sim/performance.js";
+import { cornerSpeed, instantaneousTurns, maxInstantaneousTurn, turnRate } from "../sim/performance.js";
 
 export const KT = 0.514444; // m/s per knot
 export const FPM = 0.00508; // m/s per foot per minute
@@ -59,12 +59,13 @@ export function figures(json) {
 
   // Turns
   const corner = tryOr(() => cornerSpeed(c));
+  const most = tryOr(() => maxInstantaneousTurn(c));
   out.push({
     group: "Turns",
     rows: [
       { name: "maximum sustained turn rate", value: hasEngine(json) ? null : "no engine" },
-      { name: "maximum instantaneous turn rate", value: corner ? `${Math.round(corner.rate * DEG)}°/s` : null },
-      { name: "corner speed", value: kt(corner?.V) },
+      { name: "maximum instantaneous turn rate", value: most ? `${Math.round(most.rate * DEG)}°/s` : null, note: most && !most.atCorner ? "at the never-exceed speed" : undefined },
+      { name: "corner speed", value: corner ? (corner.V <= c.vne ? kt(corner.V) : `above the never-exceed speed (${kt(corner.V)})`) : null },
       { name: "limit load factors", value: `+${json.mass.g_max} g, ${json.mass.g_min} g` },
     ],
   });

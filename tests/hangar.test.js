@@ -36,3 +36,24 @@ test("a card tuned past flying shows dashes, not an error", () => {
   const f = figures(json);
   assert.ok(f.groups.length >= 3);
 });
+
+test("with the corner above VNE, the most turn rate is the one at VNE", () => {
+  const json = read("twin-ii-acro");
+  json.mass.mass_kg = 1160;
+  json.wing.cl_max = 0.6;
+  const f = figures(json);
+  const turns = f.em.turns;
+  assert.ok(f.em.corner.V > f.em.vne);
+  assert.equal(row(f, "maximum instantaneous turn rate").value, `${Math.round(Math.max(...turns.map((p) => p.deg)))}°/s`);
+  assert.match(row(f, "corner speed").value, /above the never-exceed speed/);
+});
+
+test("an overdamped Dutch roll still gives every handling figure", () => {
+  const json = read("twin-ii-acro");
+  json.stability.cnr = -0.18;
+  json.stability.cn_beta = 0.015;
+  const f = figures(json);
+  const dr = row(f, "Dutch roll: frequency, damping ratio");
+  assert.ok(dr && dr.value, "Dutch roll figure present");
+  assert.ok(row(f, "roll-mode time constant").value);
+});

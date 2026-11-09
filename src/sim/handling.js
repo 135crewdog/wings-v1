@@ -73,7 +73,14 @@ export function modes(card, V, { altitude = 0, airbrake = 0 } = {}) {
   const complex = lat.filter((e) => e.im > 0);
   const real = lat.filter((e) => e.im === 0).sort((a, b) => a.re - b.re);
   let dutchRoll, rollMode = null, spiral = null, rollSpiral = null;
-  if (complex.length === 2) {
+  if (complex.length === 0) {
+    // all four real: the Dutch roll is overdamped, the middle two between the roll mode and the spiral (§12.1)
+    const bySize = real.slice().sort((a, b) => Math.abs(b.re) - Math.abs(a.re));
+    dutchRoll = pairOf(bySize[1], bySize[2]);
+    rollMode = { lambda: bySize[0].re, tau: -1 / bySize[0].re };
+    const ls = bySize[3].re;
+    spiral = { lambda: ls, stable: ls < 0, timeToDouble: ls > 0 ? Math.LN2 / ls : Infinity, timeToHalf: ls < 0 ? Math.LN2 / -ls : Infinity };
+  } else if (complex.length === 2) {
     // no real roots: roll and spiral have joined in a lateral phugoid; the faster pair is the Dutch roll
     const [a, b] = complex.sort((x, y) => byFreq(x, y));
     dutchRoll = pairOf(a, { re: a.re, im: -a.im });
@@ -105,10 +112,11 @@ function turning(card, trim, phi, h) {
 }
 
 /**
- * Roll performance at speed V, flown in the sim with no rudder: the time to roll from 45° of bank one
+ * Roll performance at speed V, flown in the sim at sea level (§12.2) with no rudder: the time to roll
+ * from 45° of bank one
  * way to 45° the other with full aileron, and the most roll rate full aileron gives (deg/s).
  */
-export function rollPerformance(card, V, { altitude = 1000, limit = 10 } = {}) {
+export function rollPerformance(card, V, { altitude = 0, limit = 10 } = {}) {
   const trim = glide(card, V, { altitude });
   const elevator = trim.elevator;
   // bank reversal, from a 45° left bank, full right aileron

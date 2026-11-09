@@ -105,11 +105,15 @@ function emDiagram(em) {
   text(x(vneKt) - 4, y(yTop) + 12, "VNE", { "text-anchor": "end", fill: "#ffb35c" });
   // the corner
   const ck = em.corner.V / 0.514444, cd = (em.corner.rate * 180) / Math.PI;
-  s.append(svgEl("circle", { cx: x(ck), cy: y(cd), r: 4, fill: "#eef3fa" }));
-  text(x(ck), y(cd) - 9, `corner ${Math.round(ck)} kt, ${Math.round(cd)}°/s`, { "text-anchor": "middle", fill: "#eef3fa" });
-  // the load limit's label, above its curve halfway from the corner to VNE
-  const mid = em.turns.reduce((a, p) => (Math.abs(p.kt - (ck + vneKt) / 2) < Math.abs(a.kt - (ck + vneKt) / 2) ? p : a));
-  text(x(mid.kt), y(mid.deg) - 10, `${em.gMax} g limit`, { "text-anchor": "middle" });
+  if (em.corner.V <= em.vne) {
+    s.append(svgEl("circle", { cx: x(ck), cy: y(cd), r: 4, fill: "#eef3fa" }));
+    text(x(ck), y(cd) - 9, `corner ${Math.round(ck)} kt, ${Math.round(cd)}°/s`, { "text-anchor": "middle", fill: "#eef3fa" });
+  }
+  if (em.corner.V <= em.vne) {
+    // the load limit's label, above its curve halfway from the corner to VNE
+    const mid = em.turns.reduce((a, p) => (Math.abs(p.kt - (ck + vneKt) / 2) < Math.abs(a.kt - (ck + vneKt) / 2) ? p : a));
+    text(x(mid.kt), y(mid.deg) - 10, `${em.gMax} g limit`, { "text-anchor": "middle" });
+  }
   return s;
 }
 
