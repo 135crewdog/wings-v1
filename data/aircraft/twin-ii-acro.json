@@ -47,7 +47,7 @@
     "autorotation": 0.5
   },
   "control": {
-    "elevator": { "cm_full_up": 0.25, "cm_full_down": -0.20 },
+    "elevator": { "cm_full_up": 0.12, "cm_full_down": -0.10 },
     "aileron": { "cl_full": 0.08, "cn_full": -0.012 },
     "rudder": { "cn_full": 0.035, "cy_full": -0.08, "cl_full": -0.003 }
   },
