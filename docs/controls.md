@@ -65,16 +65,16 @@ as an assist in M3.
 
 The screen follows `135crewdog/rage`:
 
-- **Left edge: the speed brakes.** A slim slider: bottom is closed, top is fully open. It stays where
-  it is left. A mark near the top (the card's `wheel_brake.from_airbrake_above`, 95% for the Twin II
-  Acro) is where the wheel brake starts working; past it the thumb turns orange. An airplane with a
-  throttle will have its throttle here instead.
+- **Left edge: the speed brakes.** A slim slider, a smooth slide from bottom to top with no detent:
+  bottom is closed, top is fully open. It stays where it is left. On the ground, fully open also puts
+  on the wheel brake (the card's `wheel_brake`). An airplane with an engine will have its throttle here
+  instead, and its wheel brake will follow its own rule (for example, the throttle at idle).
 - **Top right: pause.** A round button. Resume, recenter the tilt, restart, the menu and the settings
-  (HUD, units, debug) are on the pause screen.
+  (HUD, debug) are on the pause screen.
 - **Right side: future buttons.** Flaps, gear and the like go on the right, where the right thumb
   reaches them.
-- **The HUD:** airspeed on the left, altitude on the right with vertical speed below it; heading, g and
-  angle of attack small along the bottom. Knots, feet and feet per minute, or km/h, metres and m/s.
+- **The HUD:** airspeed on the left, altitude on the right with vertical speed below it. Plain
+  numbers, no unit labels: always knots, feet and feet per minute. There is no other unit setting.
 
 Dragging anywhere else on the screen looks around (the chase camera); letting go eases the view back.
 

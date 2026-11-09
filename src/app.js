@@ -20,7 +20,7 @@ const $ = (id) => document.getElementById(id);
 const getJSON = (path) => fetch(path).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${path}: ${r.status}`))));
 
 // ---- settings, kept per device ----
-const settings = { hud: true, units: "us", debug: false };
+const settings = { hud: true, debug: false };
 try { Object.assign(settings, JSON.parse(localStorage.getItem("wings.settings") || "{}")); } catch {}
 const saveSettings = () => { try { localStorage.setItem("wings.settings", JSON.stringify(settings)); } catch {} };
 
@@ -83,7 +83,6 @@ function show() {
   $("debug").hidden = !flying || !settings.debug;
   $("b-hud").classList.toggle("on", settings.hud);
   $("b-debug").classList.toggle("on", settings.debug);
-  $("b-units").textContent = settings.units === "us" ? "kt · ft" : "km/h · m";
 }
 
 // ---- buttons ----
@@ -101,7 +100,6 @@ $("b-restart").addEventListener("click", () => ready && start(startId));
 $("b-recenter").addEventListener("click", () => controls.tilt.calibrate());
 $("b-hud").addEventListener("click", () => { settings.hud = !settings.hud; saveSettings(); show(); });
 $("b-debug").addEventListener("click", () => { settings.debug = !settings.debug; saveSettings(); show(); });
-$("b-units").addEventListener("click", () => { settings.units = settings.units === "us" ? "metric" : "us"; saveSettings(); show(); });
 $("message-go").addEventListener("click", () => {
   if (mode === "crashed") return start(startId);
   controls.tilt.calibrate();
@@ -111,8 +109,8 @@ $("message-go").addEventListener("click", () => {
 });
 $("message-menu").addEventListener("click", () => { mode = "menu"; show(); });
 
-// The speed brake slider (docs/controls.md): bottom is closed, top is fully open, and past the mark
-// near the top the wheel brake works too. It keeps its place when let go.
+// The speed brake slider (docs/controls.md): a smooth slide, bottom closed, top fully open; it keeps
+// its place when let go. On the ground, fully open also works the wheel brake (the card says so).
 const brakeEl = $("brakes"), brakeTrack = brakeEl.querySelector(".track");
 let brakeFinger = null;
 function slide(e) {
@@ -190,16 +188,12 @@ function frame(now) {
   renderer.render(world.scene, chase.camera);
 
   if (settings.hud) {
-    const f = format(readouts(sim, sim.observe(flown)), settings.units);
+    const f = format(readouts(sim, sim.observe(flown)));
     $("r-speed").textContent = f.speed;
     $("r-altitude").textContent = f.altitude;
     $("r-vs").textContent = f.vs;
-    $("r-heading").textContent = `HDG ${f.heading}`;
-    $("r-g").textContent = f.g;
-    $("r-alpha").textContent = f.alpha;
   }
   brakeEl.querySelector(".thumb").style.top = `${(1 - ctl.airbrake) * 100}%`;
-  brakeEl.classList.toggle("wheel", ctl.airbrake > card.wheelBrakeFrom);
   brakeEl.setAttribute("aria-valuenow", String(Math.round(ctl.airbrake * 100)));
   if (settings.debug) {
     const info = renderer.info.render;
@@ -216,7 +210,6 @@ Promise.all([getJSON("data/aircraft/twin-ii-acro.json"), getJSON("data/places/te
     world = createWorld(renderer, place);
     aircraft = await loadAircraft(card.glb, card.cg);
     world.scene.add(aircraft.object);
-    brakeEl.querySelector(".mark").style.top = `${(1 - card.wheelBrakeFrom) * 100}%`;
     // a still view of the field behind the menu
     sim = new Sim(card, glideState(glide(card, 95 / 3.6, { altitude: 60 }), 60, { north: -900 }), { ground });
     prev = sim.state;

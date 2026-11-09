@@ -182,7 +182,7 @@ export function loadCard(json, { mass_kg } = {}) {
       c: p.c,
       brake: p.brake === true,
     })),
-    wheelBrakeFrom: json.wheel_brake?.from_airbrake_above ?? Infinity,
+    wheelBrake: json.wheel_brake?.when ?? "never", // §11.4
     crash: {
       wheelSink: json.crash?.wheel_sink_ms ?? Infinity,
       skidSpeed: json.crash?.skid_speed_ms ?? Infinity,

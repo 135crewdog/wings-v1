@@ -1,4 +1,4 @@
-// The HUD's figures and units (src/ui/readouts.js).
+// The HUD's figures (src/ui/readouts.js).
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -16,17 +16,14 @@ test("in a trimmed glide at 95 km/h true, 500 m up: about 93 km/h indicated, 1 g
   assert.ok(Math.abs(r.g - 1) < 0.01, `g ${r.g}`);
   assert.ok(r.heading < 1e-9 || r.heading > 359.999, `heading ${r.heading}`);
   assert.ok(r.alpha > 0 && r.alpha < 10);
-  const f = format(r, "metric");
-  assert.equal(f.speed, "93 km/h");
-  assert.match(f.heading, /^000$|^360$/);
+  assert.equal(format(r).speed, "50"); // 93 km/h indicated
 });
 
-test("units: knots, feet and feet per minute; or km/h, metres and m/s", () => {
+test("the HUD's numbers: knots, feet and feet per minute to the nearest 10, no units shown", () => {
   const r = { ias: 100 / 1.943844, altitude: 1000 / 3.28084, height: 0, vs: -1, heading: 90.4, g: 1.04, alpha: 4.26 };
-  assert.deepEqual(format(r, "us"), { speed: "100 kt", altitude: "1000 ft", vs: "−200 ft/min", heading: "090", g: "1.0 g", alpha: "α 4.3°" });
-  assert.deepEqual(format(r, "metric"), { speed: "185 km/h", altitude: "305 m", vs: "−1.0 m/s", heading: "090", g: "1.0 g", alpha: "α 4.3°" });
-  assert.equal(format({ ...r, vs: 0.02 }, "us").vs, "0 ft/min");
-  assert.equal(format({ ...r, vs: 2.5 }, "us").vs, "+490 ft/min");
+  assert.deepEqual(format(r), { speed: "100", altitude: "1000", vs: "−200" });
+  assert.equal(format({ ...r, vs: 0.02 }).vs, "0");
+  assert.equal(format({ ...r, vs: 2.5 }).vs, "+490");
 });
 
 test("on the ground at rest: height 0, 1 g", () => {

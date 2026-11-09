@@ -65,7 +65,7 @@
     { "name": "tip_left",   "type": "skid",  "pos_m": [ 0.00, -8.75, -0.53], "k": 50000, "c": 4000 },
     { "name": "tip_right",  "type": "skid",  "pos_m": [ 0.00,  8.75, -0.53], "k": 50000, "c": 4000 }
   ],
-  "wheel_brake": { "from_airbrake_above": 0.95 },
+  "wheel_brake": { "when": "airbrake_full" },
   "crash": { "wheel_sink_ms": 3.0, "skid_speed_ms": 5.0 },
   "limits": {
     "vne_kmh": 250,
@@ -114,7 +114,7 @@
     "glb": "shape",
     "contacts": { "pos_m": "shape: wheel bottoms, nose tip and wingtips from the traced shape file (feet, converted), relative to the estimated CG",
                   "k": "est", "c": "est" },
-    "wheel_brake": "est: on many two-seat gliders the wheel brake works at the end of the airbrake lever's travel; check the flight manual",
+    "wheel_brake": "est: on many two-seat gliders the wheel brake works at the end of the airbrake lever's travel (check the flight manual); in the app, the speed brake slider at the top",
     "crash": "est"
   }
 }

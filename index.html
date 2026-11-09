@@ -31,7 +31,6 @@
     #hud .small { font-size: 13px; font-variant-numeric: tabular-nums; opacity: 0.9; }
     #hud-left { left: calc(var(--left) + 72px); top: 50%; transform: translateY(-50%); }
     #hud-right { right: calc(var(--right) + 16px); top: 50%; transform: translateY(-50%); text-align: right; }
-    #hud-bottom { bottom: calc(var(--bottom) + 8px); left: 50%; transform: translateX(-50%); white-space: nowrap; }
     #debug { top: calc(var(--top) + 12px); left: calc(var(--left) + 72px); font: 11px ui-monospace, monospace; }
     /* the controls, as in 135crewdog/rage: a slim slider on the left edge, a round pause button top right */
     #controls { position: fixed; inset: 0; pointer-events: none; }
@@ -40,12 +39,10 @@
       width: 44px; pointer-events: auto; touch-action: none;
     }
     .brakes .track { position: absolute; left: 50%; top: 0; bottom: 0; width: 6px; margin-left: -3px; border-radius: 3px; background: rgba(255, 255, 255, 0.22); }
-    .brakes .mark { position: absolute; left: -7px; right: -7px; height: 2px; background: rgba(255, 255, 255, 0.6); }
     .brakes .thumb {
       position: absolute; left: 50%; width: 28px; height: 28px; margin-left: -14px; margin-top: -14px;
       border-radius: 14px; background: rgba(255, 255, 255, 0.85); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
     }
-    .brakes.wheel .thumb { background: #ff9f0a; }
     .pause {
       position: absolute; right: calc(var(--right) + 14px); top: calc(var(--top) + 10px);
       width: 36px; height: 36px; border: 0; border-radius: 18px; background: rgba(255, 255, 255, 0.18); color: #fff;
@@ -83,13 +80,12 @@
     <div id="hud-left" class="panel"><div class="label">AIRSPEED</div><div class="big" id="r-speed">–</div></div>
     <div id="hud-right" class="panel"><div class="label">ALTITUDE</div><div class="big" id="r-altitude">–</div>
       <div class="label" style="margin-top:10px">VERTICAL SPEED</div><div class="big" id="r-vs">–</div></div>
-    <div id="hud-bottom" class="panel small"><span id="r-heading">–</span> &nbsp;·&nbsp; <span id="r-g">–</span> &nbsp;·&nbsp; <span id="r-alpha">–</span></div>
   </div>
   <div id="debug" class="panel" hidden></div>
 
   <div id="controls" hidden>
     <div id="brakes" class="brakes" role="slider" aria-label="Speed brakes" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-      <div class="track"><div class="mark"></div><div class="thumb"></div></div>
+      <div class="track"><div class="thumb"></div></div>
     </div>
     <button id="pause" class="pause" aria-label="Pause">II</button>
   </div>
@@ -97,8 +93,8 @@
   <div id="menu" class="screen">
     <h1>Wings</h1>
     <p>Grob Twin II Acro over the test grid. Hold the phone like a steering wheel: tilt the top edge
-      toward you to pull, turn it to bank. The slider on the left is the speed brakes: up opens them,
-      and the top of its travel works the wheel brake too.</p>
+      toward you to pull, turn it to bank. The slider on the left is the speed brakes: slide it up to
+      open them. On the ground, all the way up is the wheel brake too.</p>
     <div class="row">
       <button data-start="high" disabled>High · 1,000 m</button>
       <button data-start="circuit" disabled>Circuit · 300 m</button>
@@ -119,7 +115,6 @@
     </div>
     <div class="row" data-paused>
       <button id="b-hud" class="on">HUD</button>
-      <button id="b-units">kt · ft</button>
       <button id="b-debug">Debug</button>
     </div>
   </div>

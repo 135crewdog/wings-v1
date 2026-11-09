@@ -1,16 +1,13 @@
-// The HUD's figures from the sim (pure, tested): airspeed, altitude, vertical speed, heading, g and
-// angle of attack, in the pilot's chosen units. Cards keep their source units; only
-// the display converts.
+// The HUD's figures from the sim (pure, tested): airspeed, altitude and vertical speed, shown in
+// knots, feet and feet per minute; heading, g and angle of attack for tools and tests. Cards keep
+// their source units; only the display converts.
 
 import { atmosphere } from "../sim/atmosphere.js";
 import { pointState } from "../sim/contact.js";
 import { qrotate } from "../sim/vec.js";
 
 const RHO0 = 1.225, G0 = 9.80665;
-export const UNITS = {
-  us: { speed: ["kt", 1.943844], height: ["ft", 3.28084], vs: ["ft/min", 196.850394] },
-  metric: { speed: ["km/h", 3.6], height: ["m", 1], vs: ["m/s", 1] },
-};
+const KT = 1.943844, FT = 3.28084, FPM = 196.850394; // per m/s, per m, per m/s
 
 /**
  * The figures in SI: { ias, altitude (the CG above sea level), height (the lowest wheel above the
@@ -35,17 +32,15 @@ export function readouts(sim, observed) {
   };
 }
 
-/** The figures as display strings with their units. Vertical speed in ft/min to the nearest 10. */
-export function format(r, units = "us") {
-  const u = UNITS[units];
-  const vs = r.vs * u.vs[1];
-  const vsText = units === "us" ? String(Math.abs(Math.round(vs / 10) * 10)) : Math.abs(vs).toFixed(1);
+/**
+ * The HUD's numbers, without units: they are always knots (airspeed), feet (altitude) and feet per
+ * minute (vertical speed, to the nearest 10).
+ */
+export function format(r) {
+  const vs = Math.round((r.vs * FPM) / 10) * 10;
   return {
-    speed: `${Math.round(r.ias * u.speed[1])} ${u.speed[0]}`,
-    altitude: `${Math.round(r.altitude * u.height[1])} ${u.height[0]}`,
-    vs: `${vsText === "0" || vsText === "0.0" ? "" : vs > 0 ? "+" : "−"}${vsText} ${u.vs[0]}`,
-    heading: String(Math.round(r.heading) % 360).padStart(3, "0"),
-    g: `${r.g.toFixed(1)} g`,
-    alpha: `α ${r.alpha.toFixed(1)}°`,
+    speed: String(Math.round(r.ias * KT)),
+    altitude: String(Math.round(r.altitude * FT)),
+    vs: vs === 0 ? "0" : `${vs > 0 ? "+" : "−"}${Math.abs(vs)}`,
   };
 }

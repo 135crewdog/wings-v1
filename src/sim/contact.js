@@ -48,11 +48,16 @@ function pointForce(p, ps, state, ground, brakeOn) {
   return [fx + N * N_UP[0], fy + N * N_UP[1], N * N_UP[2]];
 }
 
+/** Whether the wheel brakes are on for these controls (§11.4): the card says when. */
+export function wheelBrakeOn(card, ctl) {
+  return card.wheelBrake === "airbrake_full" && ctl.airbrake >= 1;
+}
+
 /** Total body-axis contact force and moment (§11.5). */
 export function contactForces(card, state, ground, ctl) {
   const F = [0, 0, 0], M = [0, 0, 0];
   if (!ground || card.contacts.length === 0) return { F, M };
-  const brakeOn = ctl.airbrake > card.wheelBrakeFrom;
+  const brakeOn = wheelBrakeOn(card, ctl);
   for (const p of card.contacts) {
     const fw = pointForce(p, pointState(state, p.r, ground), state, ground, brakeOn);
     if (!fw) continue;

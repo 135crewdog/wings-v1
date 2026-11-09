@@ -31,3 +31,17 @@ test("a hands-off landing from 10 m rolls out and stops on the runway with the w
   const p = onRunway(runwayFrame(rw), sim.state.x[0], sim.state.x[1]);
   assert.ok(Math.abs(p.along) <= rw.length_m / 2 && Math.abs(p.across) <= rw.width_m / 2, `stopped off the runway: ${JSON.stringify(p)}`);
 });
+
+test("the wheel brake works only with the speed brakes fully open", async () => {
+  const { atRest } = await import("./flight-helpers.js");
+  const roll = (airbrake) => {
+    const c = card();
+    const sim = newSim(c, atRest(c, { gap: 0, speed: 10 }));
+    for (let i = 0; i < 2 * 120; i++) sim.step({ airbrake });
+    return Math.hypot(...sim.state.v);
+  };
+  // 0.998, 0.999 and 1 have the same airbrake drag to a thousandth; only the wheel brake differs.
+  const a = roll(0.998), almost = roll(0.999), full = roll(1);
+  assert.ok(Math.abs(almost - a) < 0.005, `at 99.9% the brake is off: ${almost.toFixed(3)} vs ${a.toFixed(3)} m/s`);
+  assert.ok(full < almost - 3, `fully open, the brake slows it: ${full.toFixed(2)} vs ${almost.toFixed(2)} m/s`);
+});

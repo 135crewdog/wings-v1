@@ -220,7 +220,7 @@ Each card is `data/aircraft/<id>.json`. Groups and fields:
 | `cg` | `from_nose_m`, `above_nose_m`: the CG's place on the airframe, from the model's origin at the nose tip |
 | `glb` | `file` (the model, `assets/models/<id>.glb`), `origin` (where the model's origin is on the airframe) |
 | `contacts` | list of contact points (section 11), each `name`, `type` (`wheel` or `skid`), `pos_m` (body axes from the CG), `k` (N/m), `c` (N·s/m), and for a wheel `brake` (true when it has one) |
-| `wheel_brake` | `from_airbrake_above`: the airbrake lever position past which the wheel brakes are on |
+| `wheel_brake` | `when`: what puts the wheel brakes on (section 11.4): `airbrake_full` for a glider; powered airplanes add their own with the engines |
 | `crash` | `wheel_sink_ms`, `skid_speed_ms`: the touchdown limits of section 11.6 |
 | `limits` | `vne_kmh` or `vne_kt`, plus any other limit speeds and load factors |
 | `targets` | the numbers tests check, each with its mass, tolerance and source |
@@ -296,9 +296,11 @@ F_roll = −(μ_roll + b μ_brake) N sat((v_t · e_r) / v_slip) e_r
 F_side = −μ_side N sat((v_t · e_s) / v_slip) e_s
 ```
 
-`b` is 1 when the wheel has a brake and the brake is on, otherwise 0. The brake is on when the airbrake
-lever is past the card's `wheel_brake.from_airbrake_above`. On many two-seat gliders the wheel brake
-works at the end of the airbrake lever's travel.
+`b` is 1 when the wheel has a brake and the brake is on, otherwise 0. The card's `wheel_brake.when`
+says when the brake is on. For a glider it is `airbrake_full`: the airbrake lever at the end of its
+travel, as on many two-seat gliders. Powered airplanes will name their own condition when the engines
+arrive (for example, the throttle at idle). A brake only acts through a wheel's friction, so it does
+nothing in the air.
 
 **Skids.** A skid slides against its velocity:
 
