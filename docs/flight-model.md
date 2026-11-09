@@ -264,8 +264,11 @@ q_extra = f T / A
 ```
 
 This acts even below 1 m/s of airspeed (section 4), where the rest of the aerodynamics is zero. The
-tail's own stability and damping, the slipstream over the wing, and the propeller's gyroscopic
-precession are left out for now.
+tail's own stability and damping, the slipstream over the wing, the slipstream's swirl on the fin and
+the propeller's gyroscopic precession are left out for now. The swirl and the precession are most of
+a real single's swing to the left on a takeoff roll (a clockwise propeller), so until they join, the
+Cub's swing without rudder comes from the torque's roll on the gear and the main wheels' side
+friction, and can go either way.
 
 The total for each engine, in body axes: `F = T · axis`, `M = pos × F + M_torque + M_pfactor + ΔM`,
 and `ΔF_y` added to the force.
