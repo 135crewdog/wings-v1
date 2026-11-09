@@ -1,11 +1,11 @@
 // The simulation: one aircraft, a state, and step(controls) at a fixed 1/120 s (flight-model §8).
-// Forces: aerodynamics (§7), gravity, and ground contact (§11) when a ground is given. Thrust joins
-// with its milestone.
+// Forces: aerodynamics (§7), thrust (§7.1), gravity, and ground contact (§11) when a ground is given.
 
 import { atmosphere } from "./atmosphere.js";
 import { aeroForces, airData, groundEffect } from "./aero.js";
 import { rk4Step } from "./body.js";
 import { contactForces, crashCheck, touching } from "./contact.js";
+import { thrustForces } from "./thrust.js";
 import { qrotate, qrotateInv } from "./vec.js";
 
 export const DT = 1 / 120;
@@ -23,6 +23,8 @@ export function normalizeControls(ctl = {}) {
     aileron: clamp(ctl.aileron ?? 0, -1, 1),
     rudder: clamp(ctl.rudder ?? 0, -1, 1),
     airbrake: clamp(ctl.airbrake ?? 0, 0, 1),
+    flaps: clamp(ctl.flaps ?? 0, 0, 1),
+    throttle: clamp(ctl.throttle ?? 0, 0, 1),
   };
 }
 
@@ -35,11 +37,12 @@ export function totalForces(card, state, t, ctl, wind = stillAir, ground = null)
   const air = airData(card, state.v, state.q, state.omega, wind(state.x, t), atm);
   if (ground) air.ge = groundEffect(-state.x[2] - ground.heightAt(state.x[0], state.x[1]), card.b); // §6.2
   const aero = aeroForces(card, air, ctl);
+  const thrust = thrustForces(card, air.Vb, air, atm.rho, ctl);
   const contact = contactForces(card, state, ground, ctl);
   const g = qrotateInv(state.q, G_W);
-  const F = [0, 1, 2].map((i) => aero.F[i] + contact.F[i] + card.m * g[i]);
-  const M = [0, 1, 2].map((i) => aero.M[i] + contact.M[i]);
-  return { F, M, air, coef: aero.coef, aero, contact };
+  const F = [0, 1, 2].map((i) => aero.F[i] + thrust.F[i] + contact.F[i] + card.m * g[i]);
+  const M = [0, 1, 2].map((i) => aero.M[i] + thrust.M[i] + contact.M[i]);
+  return { F, M, air, coef: aero.coef, aero, thrust, contact };
 }
 
 export class Sim {

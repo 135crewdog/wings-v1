@@ -103,10 +103,35 @@ export function solveBlendCentre(c, curve, target, dir) {
   throw new Error("stall solve: no bracket found");
 }
 
-const solveAlphaCPos = (c, clmax, acNeg) =>
-  solveBlendCentre(c, (ac) => (a) => liftCurve(c, a, ac, acNeg), clmax, +1);
+const solveAlphaCPos = (c, clmax, acNeg, cl0 = 0) =>
+  solveBlendCentre({ ...c, alpha0: c.alpha0 - cl0 / c.CLa }, (ac) => (a) => liftCurve(c, a, ac, acNeg, cl0), clmax, +1);
 const solveAlphaCNeg = (c, clmin, acPos) =>
   solveBlendCentre(c, (ac) => (a) => liftCurve(c, a, acPos, ac), clmin, -1);
+
+const HP = 745.7; // W
+const IN = 0.0254; // m
+const MPH = 0.44704; // m/s
+
+/** One engine (§7.1) in SI: power (W), propeller speed (rad/s), disc area, design speed. */
+function engineSI(e) {
+  const p = e.prop;
+  const D = p.diameter_m ?? p.diameter_in * IN;
+  return {
+    type: e.type,
+    power: e.power_kw != null ? e.power_kw * 1000 : e.power_hp * HP,
+    omega: (e.rpm * 2 * Math.PI) / 60,
+    pos: e.pos_m.slice(),
+    axis: e.axis.slice(),
+    spin: e.rotation === "ccw" ? -1 : 1,
+    pFactor: e.p_factor ?? 0,
+    slipTail: e.slipstream_tail ?? 0,
+    R: D / 2,
+    A: (Math.PI * D * D) / 4,
+    etaMax: p.eta_max,
+    Vd: p.design_kmh != null ? p.design_kmh * KMH : p.design_mph * MPH,
+    falloff: p.falloff ?? 0,
+  };
+}
 
 /**
  * The loaded card: SI fields and derived quantities. Options: { mass_kg } overrides the card's
@@ -117,6 +142,7 @@ export function loadCard(json, { mass_kg } = {}) {
   const k = json.mass.radii_of_gyration_m;
   const w = json.wing, st = json.stability, ctl = json.control, dr = json.drag;
   const brake = json.devices?.airbrake ?? { cd: 0, dclmax: 0, cm: 0 };
+  const flaps = json.devices?.flaps ?? { cl0: 0, cd: 0, dclmax: 0, cm: 0, travel_s: 0 };
 
   const S = w.area_m2, b = w.span_m;
   const AR = (b * b) / S;
@@ -171,6 +197,9 @@ export function loadCard(json, { mass_kg } = {}) {
     rudder: { cn: ctl.rudder.cn_full, cy: ctl.rudder.cy_full, cl: ctl.rudder.cl_full },
     // devices (§6.4)
     airbrake: { cd: brake.cd, dclmax: brake.dclmax, cm: brake.cm },
+    flaps: { cl0: flaps.cl0, cd: flaps.cd, dclmax: flaps.dclmax, cm: flaps.cm, travel: flaps.travel_s, present: json.devices?.flaps != null },
+    // engines (§7.1)
+    engines: (json.engines ?? []).map(engineSI),
     // the airframe: where the CG is on the model, the model file, and the ground contact (§11)
     cg: { fromNose: json.cg?.from_nose_m ?? 0, aboveNose: json.cg?.above_nose_m ?? 0 },
     glb: json.glb?.file ?? null,
@@ -181,6 +210,8 @@ export function loadCard(json, { mass_kg } = {}) {
       k: p.k,
       c: p.c,
       brake: p.brake === true,
+      steer: toSI("steer_deg", p.steer_deg ?? 0),
+      side: Math.sign(p.pos_m[1]), // §11.4: +1 right of the centreline, −1 left
     })),
     wheelBrake: json.wheel_brake?.when ?? "never", // §11.4
     crash: {
@@ -207,5 +238,8 @@ export function loadCard(json, { mass_kg } = {}) {
   c.alphaCPos0 = acPos;
   // Airbrake fully open moves the positive stall only (§6.4).
   c.alphaCPos1 = c.airbrake.dclmax === 0 ? acPos : solveAlphaCPos(c, c.clMax + c.airbrake.dclmax, acNeg);
+  // Flaps fully down: their lift moves the curve and their ΔCLmax its peak (§6.4).
+  c.alphaCPosF = c.flaps.cl0 === 0 && c.flaps.dclmax === 0 ? acPos
+    : solveAlphaCPos(c, c.clMax + c.flaps.dclmax, acNeg, c.flaps.cl0);
   return c;
 }

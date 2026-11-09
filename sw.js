@@ -36,6 +36,7 @@ const FILES = [
   "src/sim/handling.js",
   "src/sim/performance.js",
   "src/sim/sim.js",
+  "src/sim/thrust.js",
   "src/sim/trim.js",
   "src/sim/vec.js",
   "src/ui/figures.js",
