@@ -18,6 +18,9 @@ node tools/fly.js twin-ii-acro         # performance against the card's targets
 node tools/fly.js twin-ii-acro --polar # sink rate and glide ratio from the stall to VNE
 ```
 
+The app icon is rendered from the Twin II Acro model: with the server running, open
+http://localhost:8000/tools/icon/ and save the PNGs into `icons/`.
+
 Every push to `main` runs the tests and, if they pass, publishes the site to GitHub Pages
 (`.github/workflows/deploy.yml`). On an iPhone, open the Pages URL in Safari and choose
 Share, Add to Home Screen.
