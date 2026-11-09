@@ -8,7 +8,7 @@ const screenAngle = () => {
   return ((a % 360) + 360) % 360;
 };
 
-export function createTilt({ onFlip } = {}) {
+export function createTilt({ onFlip, onNeutral } = {}) {
   let latest = null; // the last tilt reading
   let neutral = null;
   let wantNeutral = false;
@@ -21,6 +21,7 @@ export function createTilt({ onFlip } = {}) {
     if (wantNeutral && latest.confidence > 0.3) {
       neutral = { pitch: latest.pitch, roll: latest.roll };
       wantNeutral = false;
+      onNeutral?.(); // say so: the only other sign is how the airplane answers
     }
   });
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1
+
+- Landings: the elevator is less sensitive. The stall now takes most of the tilt instead of a third
+  of it, so a flare no longer balloons and stalls into the runway.
+- The glider is no longer squashed after the phone rotates.
+- The runway no longer shimmers when you're low and close to it.
+- "Recentered ✓" shows when the tilt takes a new centre: at a start, on resume, and on Recenter.
+
 ## 0.1.0
 
 - First flight (M2): fly the Twin II Acro over a test grid and land it on a paved runway. Start

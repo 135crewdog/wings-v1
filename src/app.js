@@ -25,16 +25,25 @@ try { Object.assign(settings, JSON.parse(localStorage.getItem("wings.settings") 
 const saveSettings = () => { try { localStorage.setItem("wings.settings", JSON.stringify(settings)); } catch {} };
 
 // ---- renderer ----
-const renderer = new THREE.WebGLRenderer({ canvas: $("view"), antialias: true, powerPreference: "high-performance" });
+const canvas = $("view");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const chase = createChaseCamera(1);
-function resize() {
-  renderer.setSize(window.innerWidth, window.innerHeight, false);
-  chase.camera.aspect = window.innerWidth / window.innerHeight;
-  chase.camera.updateProjectionMatrix();
+// Size the drawing to the canvas as it is on screen, checked every frame. iOS can report the old
+// window size just after a rotation, and a camera left with the wrong aspect squashes the picture.
+function fitToScreen() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (w === 0 || h === 0) return;
+  const pr = renderer.getPixelRatio();
+  // floor, as renderer.setSize does: with a fractional pixel ratio, round would never match and
+  // would resize (and clear) the drawing buffer every frame
+  if (canvas.width !== Math.floor(w * pr) || canvas.height !== Math.floor(h * pr)) renderer.setSize(w, h, false);
+  if (Math.abs(chase.camera.aspect - w / h) > 1e-6) {
+    chase.camera.aspect = w / h;
+    chase.camera.updateProjectionMatrix();
+  }
 }
-window.addEventListener("resize", resize);
-resize();
+fitToScreen();
 $("version").textContent = `Wings ${APP_VERSION}`;
 
 // ---- flight state ----
@@ -44,7 +53,25 @@ let mode = "menu"; // menu | flying | paused | crashed
 let ready = false; // the card, the place and the model have all loaded
 let acc = 0;
 
-const controls = createControls({ onRestart: () => ready && mode !== "menu" && start(startId), onFlip: () => pause("Turned around") });
+const controls = createControls({
+  onRestart: () => ready && mode !== "menu" && start(startId),
+  onFlip: () => pause("Turned around"),
+  onNeutral: recentered,
+});
+
+// As in rage: when the tilt takes a new centre, the Recenter button and the screen say so.
+let recenterTimer = null;
+function recentered() {
+  const b = $("b-recenter"), t = $("toast");
+  b.textContent = "Recentered ✓";
+  b.classList.add("done");
+  t.hidden = false;
+  t.classList.remove("show");
+  void t.offsetWidth; // restart the fade
+  t.classList.add("show");
+  clearTimeout(recenterTimer);
+  recenterTimer = setTimeout(() => { b.textContent = "Recenter"; b.classList.remove("done"); t.hidden = true; }, 1200);
+}
 
 function start(id) {
   startId = id;
@@ -145,6 +172,7 @@ const pos = new THREE.Vector3(), quat = new THREE.Quaternion(), qa = new THREE.Q
 let last = null, fps = 60, frameMs = 16.7, stepsLast = 0;
 
 function frame(now) {
+  fitToScreen();
   const dt = last === null ? 0 : Math.min((now - last) / 1000, 0.25);
   last = now;
   if (dt > 0) { frameMs += (dt * 1000 - frameMs) * 0.05; fps = 1000 / frameMs; }

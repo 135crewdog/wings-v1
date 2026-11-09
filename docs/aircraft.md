@@ -84,6 +84,13 @@ parabola. That's why the targets check the sink rate tightly and only report the
 Everything marked `est` (stability, control powers, inertia, zero-lift angle, stall softness) is a
 first guess from geometry and typical gliders, to be set at M3 against handling targets and feel.
 
+**Elevator power, set at M2.** The first card had `cm_full_up` 0.25 and `cm_full_down` −0.20. Then the
+whole speed range from VNE to the stall took only a third of the stick (−0.29 to +0.39), and on the
+phone a 10° tilt was enough to stall: every flare ballooned, stalled and dropped the nose wheel in.
+At 0.12 and −0.10 the stall takes 81% of the stick (VNE −0.59, 95 km/h +0.15, 80 km/h +0.50), as on
+a glider at a forward CG. Elevator power changes neither stability nor any M1 figure. M3 sets it
+against handling targets.
+
 **Stall softness, set at M1.** The first card had `stall_softness_deg` 3.8. In the sim, the stall blend
 of `docs/flight-model.md` §6.1 is then already 2–14% active between 0° and 8° of α. That gave best
 glide 36.3 at 108 km/h and minimum sink 0.757 m/s at 92 km/h (580 kg), failing the sink targets.
