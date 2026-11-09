@@ -38,9 +38,19 @@ async function resolve(urlPath) {
 }
 
 const server = createServer(async (req, res) => {
-  const path = new URL(req.url, "http://localhost").pathname;
-  const file = await resolve(path);
+  let path = req.url;
   try {
+    path = new URL(req.url, "http://localhost").pathname;
+    decodeURIComponent(path);
+  } catch {
+    // A malformed request (such as "/%") gets a 400; it must not take the server down.
+    res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Bad request\n");
+    console.log(`400 ${req.method} ${path}`);
+    return;
+  }
+  try {
+    const file = await resolve(path);
     if (!file) throw new Error("not found");
     const body = await readFile(file);
     res.writeHead(200, {
