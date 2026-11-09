@@ -100,6 +100,21 @@ outside calculation and the difference is the blend. 2.0° passes every M1 targe
 at 0.708 m/s at 86 km/h, close to the manual's 0.70 at 85. It stays `est` for M3 to revisit against
 the stall behaviour.
 
+**Handling, set at M3.** Linearized at 95 and 130 km/h (`node tools/fly.js twin-ii-acro --handling`),
+the first card failed two of the bounds in `docs/flight-model.md` section 12: phugoid damping 0.034
+and 0.038 (bound 0.04), and a spiral that doubled in 16.4 s at 95 km/h (bound 20 s). Three `est`
+numbers changed, each toward what the airframe's geometry gives:
+
+| Field | Before | After | Why |
+| --- | --- | --- | --- |
+| `cmq` | −20 | −30 | the tailplane's volume (about 2.7 m² at 4.8 m from the CG) gives −25, and its lag behind the wing's downwash adds to it |
+| `cl_beta` | −0.08 | −0.10 | 3.5° of dihedral on a mid wing gives about −0.08; −0.10 is within that estimate's uncertainty |
+| `cnr` | −0.08 | −0.09 | the fin alone gives about −0.04, and the wing and fuselage add to it |
+
+Phugoid damping became 0.072 and 0.061, and the spiral doubles in 27 s at 95 km/h and is stable at 130.
+No performance figure changed. Real gliders are often mildly spirally unstable at low speed; this card
+sits just inside the bound.
+
 ### Targets
 
 The card's `targets` list is the source of truth. M1 checks the `M1` entries; M3 adds the spin.

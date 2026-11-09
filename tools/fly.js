@@ -1,27 +1,31 @@
-// node tools/fly.js <id> [--mass <kg>] [--polar]
+// node tools/fly.js <id> [--mass <kg>] [--polar | --handling]
 //
 // Without --polar: every target in the card, grouped by milestone, with target, model, difference
 // and PASS, FAIL, REPORT (printed, not checked) or NOT YET (a later milestone's physics).
 // With --polar: speed, sink rate and glide ratio every 5 km/h from the stall to VNE, at the card's
 // mass or --mass. Sea level, standard day, airbrakes closed.
+// With --handling: the modes and roll figures at the card's approach and cruise speeds, against the
+// bounds of flight-model section 12.
 
 import { loadCard } from "../src/sim/card.js";
 import { bestGlide, glide, minSink, stallSpeed } from "../src/sim/trim.js";
+import { check, modes, rollPerformance } from "../src/sim/handling.js";
 import { describe, flyTargets, readCard } from "./targets.js";
 
 const KMH = 3.6;
 
 function usage(msg) {
   if (msg) console.error(msg);
-  console.error("usage: node tools/fly.js <aircraft-id> [--mass <kg>] [--polar]");
+  console.error("usage: node tools/fly.js <aircraft-id> [--mass <kg>] [--polar | --handling]");
   process.exit(2);
 }
 
 function parse(argv) {
-  const opts = { id: null, mass: null, polar: false };
+  const opts = { id: null, mass: null, polar: false, handling: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--polar") opts.polar = true;
+    else if (a === "--handling") opts.handling = true;
     else if (a === "--mass") {
       opts.mass = Number(argv[++i]);
       if (!(opts.mass > 0)) usage("--mass needs a mass in kg");
@@ -84,6 +88,34 @@ function polarTable(json, mass) {
   }
 }
 
+function handlingTable(json, mass) {
+  const c = loadCard(json, { mass_kg: mass });
+  const speeds = [["approach", json.speeds?.approach_kmh], ["cruise", json.speeds?.cruise_kmh]].filter(([, v]) => v);
+  if (!speeds.length) usage(`${json.id} has no speeds.approach_kmh or speeds.cruise_kmh`);
+  console.log(`${json.name} (${json.id}) at ${mass} kg: handling, sea level, airbrakes closed`);
+  let ok = true;
+  for (const [label, kmh] of speeds) {
+    const m = modes(c, kmh / KMH);
+    const r = rollPerformance(c, kmh / KMH);
+    console.log(`\n${label}, ${kmh} km/h (trim: α ${fmt((m.trim.alpha * 180) / Math.PI, 2)}°, elevator ${fmt(m.trim.elevator, 3)})`);
+    console.log(`  short period    ω ${fmt(m.shortPeriod.wn, 2)} rad/s   ζ ${fmt(m.shortPeriod.zeta, 3)}`);
+    console.log(`  phugoid         period ${fmt(m.phugoid.period, 1)} s   ζ ${fmt(m.phugoid.zeta, 3)}`);
+    console.log(`  Dutch roll      ω ${fmt(m.dutchRoll.wn, 2)} rad/s   ζ ${fmt(m.dutchRoll.zeta, 3)}   ζω ${fmt(m.dutchRoll.zeta * m.dutchRoll.wn, 3)} rad/s`);
+    if (m.rollMode) {
+      console.log(`  roll mode       τ ${fmt(m.rollMode.tau, 3)} s`);
+      console.log(`  spiral          ${m.spiral.stable ? `stable, time to half ${fmt(m.spiral.timeToHalf, 0)} s` : `unstable, time to double ${fmt(m.spiral.timeToDouble, 1)} s`}`);
+    } else {
+      console.log(`  roll and spiral coupled: ω ${fmt(m.rollSpiral.wn, 2)} rad/s   ζ ${fmt(m.rollSpiral.zeta, 3)}`);
+    }
+    console.log(`  bank 45° to 45° ${Number.isFinite(r.reversal) ? fmt(r.reversal, 2) + " s" : "not within 10 s"}   maximum roll rate ${fmt(r.maxRollRate, 0)}°/s`);
+    for (const x of check(m)) {
+      ok &&= x.pass;
+      console.log(`    ${x.pass ? "PASS" : "FAIL"}  ${pad(x.what, 30)} ${lpad(Number.isFinite(x.value) ? fmt(x.value, 3) : "∞", 8)}  (${x.bound})`);
+    }
+  }
+  return ok;
+}
+
 const opts = parse(process.argv.slice(2));
 let json;
 try {
@@ -93,6 +125,8 @@ try {
 }
 if (opts.polar) {
   polarTable(json, opts.mass ?? json.mass.mass_kg);
+} else if (opts.handling) {
+  process.exitCode = handlingTable(json, opts.mass ?? json.mass.mass_kg) ? 0 : 1;
 } else {
   if (opts.mass) console.log(`(--mass applies to --polar; each target flies at its own mass)\n`);
   const ok = targetsTable(json);

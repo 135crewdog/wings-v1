@@ -200,8 +200,7 @@ flight manual's indicated speeds can be compared directly.
   at its trim value (as if trimmed with the trim lever) and everything else neutral. It must stay
   within 2 km/h and 0.5° of the trimmed state. This proves the trim and the integrator agree.
 
-Handling figures (short-period frequency and damping, phugoid, Dutch roll, spiral, roll rate and roll
-lag, spins) join this section at M3.
+Handling figures are section 12; spins are section 13.
 
 ## 10. The card
 
@@ -222,6 +221,7 @@ Each card is `data/aircraft/<id>.json`. Groups and fields:
 | `contacts` | list of contact points (section 11), each `name`, `type` (`wheel` or `skid`), `pos_m` (body axes from the CG), `k` (N/m), `c` (N·s/m), and for a wheel `brake` (true when it has one) |
 | `wheel_brake` | `when`: what puts the wheel brakes on (section 11.4): `airbrake_full` for a glider; powered airplanes add their own with the engines |
 | `crash` | `wheel_sink_ms`, `skid_speed_ms`: the touchdown limits of section 11.6 |
+| `speeds` | `approach_kmh`, `cruise_kmh`: the trimmed speeds the handling figures are measured at (section 12) |
 | `limits` | `vne_kmh` or `vne_kt`, plus any other limit speeds and load factors |
 | `targets` | the numbers tests check, each with its mass, tolerance and source |
 | `src` | per group, a map from field to source key (`fm`, `bga`, `fit`, `est`, ...), or one string when the whole group shares a source |
@@ -337,4 +337,65 @@ slowed it, by up to a tenth for a firm arrival. The flight ends when:
 
 A wingtip settling at the end of a landing roll touches down slowly and is not a crash. After a
 crash the sim no longer steps.
+
+## 12. Handling
+
+How an airplane answers its controls and recovers from a disturbance. Every figure is measured from
+the 6-DOF sim itself, with the same forces and equations as flight, never from a separate formula.
+`node tools/fly.js <id> --handling` prints them; `src/sim/handling.js` measures them.
+
+### 12.1 The modes
+
+At each of the card's `speeds` (approach and cruise), sea level, airbrakes closed:
+
+1. **Trim** a steady, wings-level glide (section 9).
+2. **Linearize.** Take the eight states that govern the motion, `u, v, w` (body velocity), `p, q, r`
+   and the bank and pitch angles `φ, θ`, and find how each one's rate of change responds to a small
+   change in each, by central differences of the sim's own derivatives (sections 7, 8). Trimmed wings
+   level, the longitudinal states (`u, w, q, θ`) and the lateral ones (`v, p, r, φ`) don't affect
+   each other, so they form two 4×4 matrices.
+3. **Find their eigenvalues** (the characteristic polynomial's roots). Each mode is an eigenvalue or a
+   complex pair:
+
+| Mode | Which eigenvalues | Figures |
+| --- | --- | --- |
+| short period | the faster longitudinal pair | natural frequency ω (rad/s), damping ratio ζ |
+| phugoid | the slower longitudinal pair | period 2π/ω_d (s), damping ratio ζ |
+| Dutch roll | the lateral complex pair | ω (rad/s), ζ, and ζω |
+| roll mode | the faster lateral real root λ | time constant τ = −1/λ (s) |
+| spiral | the slower lateral real root λ | time to double ln 2/λ when λ > 0, to half ln 2/(−λ) when λ < 0 |
+
+For a pair `λ = σ ± iω_d`, `ω = |λ|` and `ζ = −σ / ω`. A pair of real roots counts as an overdamped
+mode with `ω = √(λ₁λ₂)` and `ζ = −(λ₁ + λ₂) / (2ω)`.
+
+The linearization is checked against the full sim: a small speed step from trim, flown for a few
+minutes, must show the phugoid's period and damping (`tests/handling.test.js`).
+
+### 12.2 Roll performance
+
+Flown in the 6-DOF sim at each speed, rudder neutral and no assists:
+
+- **Bank-to-bank time:** from a steady 45° turn one way, full aileron the other way; the time to reach
+  45° the other way.
+- **Maximum roll rate:** from wings level, full aileron; the largest roll rate `p` reached.
+
+### 12.3 Bounds
+
+Every airplane must meet these sanity bounds at both speeds. They are MIL-F-8785C Level 1 values,
+checked against a secondary source (the MathWorks "Flying Quality Analysis for 6DOF De Havilland
+Beaver Airframe" example, which quotes the specification's Flight Phase Category B requirements); the
+specification itself (AFWAL-TR-81-3109 and the MIL-F-8785C text on DTIC) could not be read.
+
+| Figure | Bound | Note |
+| --- | --- | --- |
+| short-period damping ratio | 0.35 to 1.30 | Category B allows 0.30 to 2.0; 0.35 to 1.30 is the narrower range the M3 brief recalled, kept as the stricter bound |
+| phugoid damping ratio | at least 0.04 | |
+| Dutch roll | ζ at least 0.08, ω at least 0.4 rad/s, ζω at least 0.15 rad/s | the ζω limit was missing from the M3 brief; it is in the specification |
+| roll-mode time constant | at most 1.4 s | |
+| spiral | stable, or time to double at least 20 s | |
+
+A light, efficient glider sits near two of these by nature: its phugoid damping is roughly
+1/(√2 · L/D), about 0.02 at L/D 37 before pitch damping helps, and many gliders are mildly spirally
+unstable at low speed. The card's pitch damping, dihedral effect and yaw damping are set so they pass,
+within what their geometry supports (`docs/aircraft.md`).
 

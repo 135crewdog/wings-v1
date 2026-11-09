@@ -30,6 +30,8 @@ const FILES = [
   "src/sim/body.js",
   "src/sim/card.js",
   "src/sim/contact.js",
+  "src/sim/eigen.js",
+  "src/sim/handling.js",
   "src/sim/sim.js",
   "src/sim/trim.js",
   "src/sim/vec.js",
