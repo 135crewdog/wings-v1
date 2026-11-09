@@ -13,6 +13,7 @@ const FILES = [
   "icons/icon-192.png",
   "icons/icon-512.png",
   "src/app.js",
+  "src/input/assists.js",
   "src/input/controls.js",
   "src/input/curves.js",
   "src/input/gamepad.js",
