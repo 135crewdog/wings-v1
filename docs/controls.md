@@ -12,6 +12,12 @@ largest offer by size wins, so a gamepad or keyboard can always override tilt. T
 with a position: the on-screen slider sets it, and keys and the gamepad move it. It stays where it was
 left.
 
+## Elevator trim
+
+Gliders fly hands off on a trim lever, and so does this one. Each start sets the trim to the
+elevator its trimmed glide needs (`trim.js`), and the stick adds to it: with tilt at neutral, the
+glider holds its start speed. The sum is clamped to the elevator's −1 to 1.
+
 ## Shaping
 
 Every stick-like input goes through one curve: a dead zone, then a gentle curve near the centre, then

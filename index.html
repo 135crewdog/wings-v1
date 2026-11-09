@@ -13,51 +13,103 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <style>
+    :root {
+      --top: env(safe-area-inset-top); --right: env(safe-area-inset-right);
+      --bottom: env(safe-area-inset-bottom); --left: env(safe-area-inset-left);
+      --ink: #fff; --shade: rgba(10, 25, 45, 0.45);
+    }
     html, body {
-      margin: 0;
-      height: 100%;
-      overflow: hidden;
-      background: #87b9e8;
-      overscroll-behavior: none;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-touch-callout: none;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: none;
+      margin: 0; height: 100%; overflow: hidden; background: #8fbfe6; color: var(--ink);
+      overscroll-behavior: none; -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: none;
       font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
     }
     #view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-    #version {
-      position: fixed;
-      right: calc(env(safe-area-inset-right) + 10px);
-      bottom: calc(env(safe-area-inset-bottom) + 8px);
-      color: rgba(255, 255, 255, 0.85);
-      font-size: 13px;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-      pointer-events: none;
+    .panel { position: fixed; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); pointer-events: none; }
+    #hud .big { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    #hud .small { font-size: 14px; font-variant-numeric: tabular-nums; opacity: 0.9; }
+    #hud-left { left: calc(var(--left) + 16px); top: 50%; transform: translateY(-50%); }
+    #hud-right { right: calc(var(--right) + 96px); top: 50%; transform: translateY(-50%); text-align: right; }
+    #hud-top { top: calc(var(--top) + 52px); left: 50%; transform: translateX(-50%); text-align: center; }
+    #hud-bottom { bottom: calc(var(--bottom) + 10px); left: calc(var(--left) + 16px); }
+    #debug { bottom: calc(var(--bottom) + 10px); right: calc(var(--right) + 96px); font: 12px ui-monospace, monospace; text-align: right; }
+    #buttons { position: fixed; top: calc(var(--top) + 8px); left: calc(var(--left) + 10px); display: flex; gap: 8px; }
+    #buttons button, .screen button {
+      font: inherit; font-size: 14px; color: var(--ink); background: var(--shade); border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 10px; padding: 7px 11px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
     }
-    #rotate {
-      display: none;
-      position: fixed;
-      inset: 0;
-      align-items: center;
-      justify-content: center;
-      background: #87b9e8;
-      color: white;
-      font-size: 18px;
-      text-align: center;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    #buttons button.on { background: rgba(40, 110, 200, 0.7); }
+    #airbrake {
+      position: fixed; right: calc(var(--right) + 18px); top: calc(var(--top) + 60px); bottom: calc(var(--bottom) + 24px);
+      width: 58px; border-radius: 14px; background: var(--shade); border: 1px solid rgba(255, 255, 255, 0.3);
     }
+    #airbrake .fill { position: absolute; left: 0; right: 0; top: 0; border-radius: 14px 14px 0 0; background: rgba(255, 190, 60, 0.55); }
+    #airbrake .thumb { position: absolute; left: 4px; right: 4px; height: 34px; border-radius: 10px; background: #fff; color: #234; font-size: 11px;
+      display: flex; align-items: center; justify-content: center; font-weight: 600; transform: translateY(-50%); }
+    #airbrake .label { position: absolute; bottom: -18px; width: 100%; text-align: center; font-size: 11px; opacity: 0.85; }
+    #airbrake .brake { position: absolute; bottom: 0; left: 0; right: 0; height: 5%; border-radius: 0 0 14px 14px; background: rgba(220, 60, 60, 0.45); }
+    .screen {
+      position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+      background: rgba(20, 50, 90, 0.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); text-align: center;
+      padding: var(--top) var(--right) var(--bottom) var(--left);
+    }
+    .screen h1 { margin: 0; font-size: 34px; letter-spacing: 0.04em; }
+    .screen p { margin: 0; max-width: 520px; opacity: 0.92; font-size: 15px; line-height: 1.35; }
+    .screen .row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .screen .row button { font-size: 17px; padding: 12px 20px; min-width: 110px; }
+    .screen small { opacity: 0.75; }
+    [hidden] { display: none !important; }
+    #rotate { display: none; z-index: 10; background: #2e6aa8; }
     @media (orientation: portrait) { #rotate { display: flex; } }
   </style>
   <script type="importmap">
-    { "imports": { "three": "./vendor/three/three.module.js" } }
+    { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
   </script>
 </head>
 <body>
   <canvas id="view"></canvas>
-  <div id="version"></div>
-  <div id="rotate">Turn your phone sideways to fly.</div>
+
+  <div id="hud">
+    <div id="hud-top" class="panel"><div class="big" id="r-heading">000</div></div>
+    <div id="hud-left" class="panel"><div class="small">AIRSPEED</div><div class="big" id="r-speed">–</div></div>
+    <div id="hud-right" class="panel"><div class="small">HEIGHT</div><div class="big" id="r-height">–</div>
+      <div class="small" style="margin-top:10px">VARIO</div><div class="big" id="r-vs">–</div></div>
+    <div id="hud-bottom" class="panel small"><span id="r-g">–</span> &nbsp; <span id="r-alpha">–</span> &nbsp; <span id="r-brake"></span></div>
+  </div>
+  <div id="debug" class="panel" hidden></div>
+
+  <div id="buttons" hidden>
+    <button id="b-menu">Menu</button>
+    <button id="b-restart">Restart</button>
+    <button id="b-calibrate">Calibrate</button>
+    <button id="b-hud" class="on">HUD</button>
+    <button id="b-units">kt · ft</button>
+    <button id="b-debug">Debug</button>
+  </div>
+
+  <div id="airbrake" hidden><div class="fill"></div><div class="brake"></div><div class="thumb">0%</div><div class="label">AIRBRAKE</div></div>
+
+  <div id="menu" class="screen">
+    <h1>Wings</h1>
+    <p>Grob Twin II Acro over the test grid. Hold the phone like a steering wheel: tilt the top edge
+      toward you to pull, turn it to bank. The slider on the right is the airbrake; pull it to the
+      bottom for the wheel brake.</p>
+    <div class="row">
+      <button data-start="high">High · 1,000 m</button>
+      <button data-start="circuit">Circuit · 300 m</button>
+      <button data-start="final">Final · 2 km out</button>
+    </div>
+    <small id="menu-status">Loading…</small>
+    <small id="version"></small>
+  </div>
+
+  <div id="message" class="screen" hidden>
+    <h1 id="message-title"></h1>
+    <p id="message-text"></p>
+    <div class="row"><button id="message-go">Fly again</button><button id="message-menu">Menu</button></div>
+  </div>
+
+  <div id="rotate" class="screen"><p>Turn your phone sideways to fly.</p></div>
   <script type="module" src="src/app.js"></script>
 </body>
 </html>

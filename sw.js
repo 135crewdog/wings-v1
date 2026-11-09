@@ -2,7 +2,7 @@
 // The cache name carries APP_VERSION (src/version.js); tests/smoke.test.js checks they match.
 // A new version installs, takes over at once and deletes every older Wings cache.
 
-const VERSION = "0.0.2";
+const VERSION = "0.1.0";
 const CACHE = `wings-${VERSION}`;
 
 const FILES = [
@@ -14,8 +14,35 @@ const FILES = [
   "icons/icon-512.png",
   "src/app.js",
   "src/version.js",
+  "src/ui/readouts.js",
+  "src/world/ground.js",
+  "src/sim/aero.js",
+  "src/sim/atmosphere.js",
+  "src/sim/body.js",
+  "src/sim/card.js",
+  "src/sim/contact.js",
+  "src/sim/sim.js",
+  "src/sim/trim.js",
+  "src/sim/vec.js",
+  "src/render/aircraft.js",
+  "src/render/camera.js",
+  "src/render/frames.js",
+  "src/render/surfaces.js",
+  "src/render/world.js",
+  "src/input/controls.js",
+  "src/input/curves.js",
+  "src/input/gamepad.js",
+  "src/input/keyboard.js",
+  "src/input/tilt.js",
+  "data/surfaces.json",
+  "data/places/test-grid.json",
+  "data/aircraft/twin-ii-acro.json",
+  "assets/models/twin-ii-acro.glb",
   "vendor/three/three.module.js",
   "vendor/three/three.core.js",
+  "vendor/three/addons/loaders/GLTFLoader.js",
+  "vendor/three/addons/utils/BufferGeometryUtils.js",
+  "vendor/three/addons/utils/SkeletonUtils.js",
 ];
 
 self.addEventListener("install", (event) => {

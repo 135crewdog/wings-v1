@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0
+
+- First flight (M2): fly the Twin II Acro over a test grid and land it on a paved runway. Start
+  high, in the circuit or on final. Tilt the phone to fly, or use a gamepad or the keyboard; the
+  slider is the airbrake, and at its bottom the wheel brake. Ground contact with wheels and
+  wingtips, a chase camera you can drag to look around, and a HUD in knots and feet (or km/h and
+  metres), with a debug readout of the frame rate.
+
 ## 0.0.2
 
 - A new app icon: the Twin II Acro banking across a blue gradient, rendered from its 3D model
