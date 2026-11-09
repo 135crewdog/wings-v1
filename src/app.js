@@ -63,7 +63,7 @@ function start(id) {
 function pause(title = "Paused") {
   if (mode !== "flying") return;
   mode = "paused";
-  message(title, "Hold the phone the way you'll fly, then resume. Resume takes that as the centre.", "Resume");
+  message(title, "Hold the phone the way you'll fly, then resume: that becomes the centre.", "Resume");
 }
 
 function message(title, text, go) {
@@ -76,9 +76,9 @@ function message(title, text, go) {
 function show() {
   $("menu").hidden = mode !== "menu";
   $("message").hidden = mode !== "paused" && mode !== "crashed";
+  for (const el of document.querySelectorAll("[data-paused]")) el.hidden = mode !== "paused";
   const flying = mode !== "menu";
-  $("buttons").hidden = !flying;
-  $("airbrake").hidden = !flying;
+  $("controls").hidden = !flying;
   $("hud").hidden = !flying || !settings.hud;
   $("debug").hidden = !flying || !settings.debug;
   $("b-hud").classList.toggle("on", settings.hud);
@@ -96,9 +96,9 @@ for (const b of document.querySelectorAll("[data-start]")) {
     if (ready) start(b.dataset.start);
   });
 }
-$("b-menu").addEventListener("click", () => { mode = "menu"; show(); });
+$("pause").addEventListener("click", () => pause());
 $("b-restart").addEventListener("click", () => ready && start(startId));
-$("b-calibrate").addEventListener("click", () => controls.tilt.calibrate());
+$("b-recenter").addEventListener("click", () => controls.tilt.calibrate());
 $("b-hud").addEventListener("click", () => { settings.hud = !settings.hud; saveSettings(); show(); });
 $("b-debug").addEventListener("click", () => { settings.debug = !settings.debug; saveSettings(); show(); });
 $("b-units").addEventListener("click", () => { settings.units = settings.units === "us" ? "metric" : "us"; saveSettings(); show(); });
@@ -111,14 +111,23 @@ $("message-go").addEventListener("click", () => {
 });
 $("message-menu").addEventListener("click", () => { mode = "menu"; show(); });
 
-// The airbrake slider: top is closed, bottom open; the last 5% is the wheel brake.
-const brakeEl = $("airbrake");
+// The speed brake slider (docs/controls.md): bottom is closed, top is fully open, and past the mark
+// near the top the wheel brake works too. It keeps its place when let go.
+const brakeEl = $("brakes"), brakeTrack = brakeEl.querySelector(".track");
+let brakeFinger = null;
 function slide(e) {
-  const r = brakeEl.getBoundingClientRect();
-  controls.setAirbrake((e.clientY - r.top) / r.height);
+  const r = brakeTrack.getBoundingClientRect();
+  controls.setAirbrake(1 - (e.clientY - r.top) / r.height);
 }
-brakeEl.addEventListener("pointerdown", (e) => { brakeEl.setPointerCapture(e.pointerId); slide(e); });
-brakeEl.addEventListener("pointermove", (e) => { if (brakeEl.hasPointerCapture(e.pointerId)) slide(e); });
+brakeEl.addEventListener("pointerdown", (e) => {
+  if (brakeFinger !== null) return;
+  brakeFinger = e.pointerId;
+  brakeEl.setPointerCapture(e.pointerId);
+  slide(e);
+  e.preventDefault();
+});
+brakeEl.addEventListener("pointermove", (e) => { if (e.pointerId === brakeFinger) slide(e); });
+for (const t of ["pointerup", "pointercancel"]) brakeEl.addEventListener(t, (e) => { if (e.pointerId === brakeFinger) brakeFinger = null; });
 
 // Drag on the view to look around; the camera eases back on release.
 let drag = null;
@@ -183,18 +192,15 @@ function frame(now) {
   if (settings.hud) {
     const f = format(readouts(sim, sim.observe(flown)), settings.units);
     $("r-speed").textContent = f.speed;
-    $("r-height").textContent = f.height;
+    $("r-altitude").textContent = f.altitude;
     $("r-vs").textContent = f.vs;
-    $("r-heading").textContent = f.heading;
+    $("r-heading").textContent = `HDG ${f.heading}`;
     $("r-g").textContent = f.g;
     $("r-alpha").textContent = f.alpha;
-    $("r-brake").textContent = ctl.airbrake > 0.005
-      ? `airbrake ${Math.round(ctl.airbrake * 100)}%${ctl.airbrake > card.wheelBrakeFrom ? " · wheel brake" : ""}` : "";
   }
-  brakeEl.querySelector(".fill").style.height = `${ctl.airbrake * 100}%`;
-  const thumb = brakeEl.querySelector(".thumb");
-  thumb.style.top = `${ctl.airbrake * 100}%`;
-  thumb.textContent = `${Math.round(ctl.airbrake * 100)}%`;
+  brakeEl.querySelector(".thumb").style.top = `${(1 - ctl.airbrake) * 100}%`;
+  brakeEl.classList.toggle("wheel", ctl.airbrake > card.wheelBrakeFrom);
+  brakeEl.setAttribute("aria-valuenow", String(Math.round(ctl.airbrake * 100)));
   if (settings.debug) {
     const info = renderer.info.render;
     $("debug").textContent = `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms · ${info.calls} draws · ${stepsLast} steps · ${controls.source}`;
@@ -210,6 +216,7 @@ Promise.all([getJSON("data/aircraft/twin-ii-acro.json"), getJSON("data/places/te
     world = createWorld(renderer, place);
     aircraft = await loadAircraft(card.glb, card.cg);
     world.scene.add(aircraft.object);
+    brakeEl.querySelector(".mark").style.top = `${(1 - card.wheelBrakeFrom) * 100}%`;
     // a still view of the field behind the menu
     sim = new Sim(card, glideState(glide(card, 95 / 3.6, { altitude: 60 }), 60, { north: -900 }), { ground });
     prev = sim.state;

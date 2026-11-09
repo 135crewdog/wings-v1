@@ -61,10 +61,20 @@ meaning. The method and the signs were confirmed on an iPhone in `135crewdog/rag
 There is no rudder on tilt in M2. Turns slip a little without it, which is honest; auto-rudder arrives
 as an assist in M3.
 
-## Touch
+## Touch, and the screen's layout
 
-An airbrake slider on the screen: up is closed, down is open, like a glider's airbrake lever pulled
-back. Past 95% it also works the wheel brake (the card's `wheel_brake`).
+The screen follows `135crewdog/rage`:
+
+- **Left edge: the speed brakes.** A slim slider: bottom is closed, top is fully open. It stays where
+  it is left. A mark near the top (the card's `wheel_brake.from_airbrake_above`, 95% for the Twin II
+  Acro) is where the wheel brake starts working; past it the thumb turns orange. An airplane with a
+  throttle will have its throttle here instead.
+- **Top right: pause.** A round button. Resume, recenter the tilt, restart, the menu and the settings
+  (HUD, units, debug) are on the pause screen.
+- **Right side: future buttons.** Flaps, gear and the like go on the right, where the right thumb
+  reaches them.
+- **The HUD:** airspeed on the left, altitude on the right with vertical speed below it; heading, g and
+  angle of attack small along the bottom. Knots, feet and feet per minute, or km/h, metres and m/s.
 
 Dragging anywhere else on the screen looks around (the chase camera); letting go eases the view back.
 
