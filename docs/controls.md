@@ -20,7 +20,8 @@ selector; the flaps then run toward it at the card's `travel_s` for full travel,
 seconds to come down. Only airplanes with flaps have the button.
 
 **Wheel brakes** follow the card's rule (flight-model 11.4): on the glider, the lever at the top; on
-an airplane with an engine, the throttle at idle. With the brakes on, the rudder makes them
+an airplane with an engine, the throttle at idle once every wheel is on the ground (a taildragger's
+tail is down). With the brakes on, the rudder makes them
 differential, like toe brakes.
 
 ## Assists
@@ -106,7 +107,7 @@ The screen follows `135crewdog/rage`:
 - **Left edge: the lever.** A slim slider, a smooth slide from bottom to top with no detent. On the
   glider it is the speed brakes: bottom closed, top fully open, and on the ground fully open also puts
   on the wheel brake. On an airplane with an engine it is the throttle: bottom idle, top full, and at
-  idle the wheel brakes are on. It stays where it is left.
+  idle the wheel brakes come on once every wheel is down. It stays where it is left.
 - **Top right: pause.** A round button. Resume, recenter the tilt, restart, the menu and the settings
   (HUD, debug) are on the pause screen.
 - **Right side: buttons.** The flaps button (on airplanes with flaps) shows the selector: "Flaps up"

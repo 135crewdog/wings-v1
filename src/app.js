@@ -336,7 +336,7 @@ function pickers() {
   const list = card.json.glb.liveries ?? [];
   row($("pick-livery"), list.map((l) => l.name), settings.livery[card.id] ?? 0, (i) => livery(i));
   $("menu-about").textContent = powered()
-    ? "Hold the phone like a steering wheel: tilt the top edge toward you to pull, turn it to bank, and on the ground to steer. The slider on the left is the throttle; at idle the wheel brakes are on."
+    ? "Hold the phone like a steering wheel: tilt the top edge toward you to pull, turn it to bank, and on the ground to steer. The slider on the left is the throttle; at idle, once the tailwheel is down, the wheel brakes are on."
     : "Hold the phone like a steering wheel: tilt the top edge toward you to pull, turn it to bank. The slider on the left is the speed brakes; on the ground, all the way up is the wheel brake too.";
 }
 

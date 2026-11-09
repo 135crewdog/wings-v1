@@ -428,8 +428,9 @@ F_side = −μ_side N sat((v_t · e_s) / v_slip) e_s
 
 `b` is the brake's share, from 0 to 1, for a wheel that has a brake, and 0 for one that hasn't. The
 card's `wheel_brake.when` says when the brakes are on: `airbrake_full` (the airbrake lever at the end
-of its travel, as on many two-seat gliders) or `throttle_idle` (the throttle closed, as on a powered
-airplane). With the brakes on, the rudder makes them differential, like toe brakes: for a wheel on the
+of its travel, as on many two-seat gliders) or `throttle_idle` (the throttle closed with every wheel
+on the ground: a taildragger's brakes wait for its tailwheel, as a pilot's feet wait until the tail is
+down, so closing the throttle on a wheel landing doesn't tip it onto its nose). With the brakes on, the rudder makes them differential, like toe brakes: for a wheel on the
 side `s_w` (+1 right of the centreline, −1 left, 0 on it)
 
 ```

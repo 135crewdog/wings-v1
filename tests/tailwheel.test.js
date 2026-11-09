@@ -66,10 +66,19 @@ test("tail up with a little sideslip: straight with the rudder, a swerve off the
   assert.ok(Math.abs(loose.east) > 15, "off the 30 m runway");
 });
 
-test("braking hard with the tail up noses it over; in the three-point attitude it stops", () => {
-  const tailUp = onRunway({ pitch: 0.03, speed: 15 });
-  for (let i = 0; i < 5 * 120 && !tailUp.crashed; i++) tailUp.step({ throttle: 0, rudder: feet(tailUp) });
-  assert.ok(tailUp.crashed && tailUp.crashed.point === "propeller", JSON.stringify(tailUp.crashed));
+test("closing the throttle with the tail up doesn't brake; the brakes wait for the tailwheel, then stop it", () => {
+  // a wheel landing: tail up at 24 m/s (54 mph), throttle closed, stick neutral
+  const sim = onRunway({ pitch: 0.03, speed: 24 });
+  let tailDown = null;
+  for (let i = 0; i < 25 * 120; i++) {
+    sim.step({ throttle: 0, elevator: 0, rudder: feet(sim) });
+    assert.equal(sim.crashed, null, JSON.stringify(sim.crashed));
+    const tw = c.contacts.findIndex((p) => p.name === "tail_wheel");
+    if (tailDown === null && sim.touching[tw]) tailDown = Math.hypot(...sim.state.v);
+  }
+  assert.ok(tailDown !== null, "the tail never came down");
+  assert.ok(Math.hypot(...sim.state.v) < 0.1, "still rolling");
+  // a stop on the brakes in the three-point attitude
   const three = onRunway({ speed: 15 });
   for (let i = 0; i < 15 * 120; i++) three.step({ throttle: 0, elevator: 1, rudder: feet(three) });
   assert.equal(three.crashed, null);

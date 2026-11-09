@@ -52,10 +52,13 @@ function pointForce(p, ps, state, ground, brakeOn, rudder) {
   return [fx + N * N_UP[0], fy + N * N_UP[1], N * N_UP[2]];
 }
 
-/** Whether the wheel brakes are on for these controls (§11.4): the card says when. */
-export function wheelBrakeOn(card, ctl) {
+/**
+ * Whether the wheel brakes are on (§11.4): the card says when. `wheelsDown` is whether every wheel is
+ * touching the ground (throttle_idle waits for it).
+ */
+export function wheelBrakeOn(card, ctl, wheelsDown = true) {
   if (card.wheelBrake === "airbrake_full") return ctl.airbrake >= 1;
-  if (card.wheelBrake === "throttle_idle") return (ctl.throttle ?? 0) <= 0;
+  if (card.wheelBrake === "throttle_idle") return (ctl.throttle ?? 0) <= 0 && wheelsDown;
   return false;
 }
 
@@ -63,9 +66,11 @@ export function wheelBrakeOn(card, ctl) {
 export function contactForces(card, state, ground, ctl) {
   const F = [0, 0, 0], M = [0, 0, 0];
   if (!ground || card.contacts.length === 0) return { F, M };
-  const brakeOn = wheelBrakeOn(card, ctl);
-  for (const p of card.contacts) {
-    const fw = pointForce(p, pointState(state, p.r, ground), state, ground, brakeOn, ctl.rudder ?? 0);
+  const states = card.contacts.map((p) => pointState(state, p.r, ground));
+  const wheelsDown = card.contacts.every((p, i) => !p.wheel || states[i].d > 0);
+  const brakeOn = wheelBrakeOn(card, ctl, wheelsDown);
+  for (const [i, p] of card.contacts.entries()) {
+    const fw = pointForce(p, states[i], state, ground, brakeOn, ctl.rudder ?? 0);
     if (!fw) continue;
     const fb = qrotateInv(state.q, fw);
     const mb = cross(p.r, fb);

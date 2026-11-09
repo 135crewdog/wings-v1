@@ -5,7 +5,8 @@
 - A second airplane: the Piper Super Cub, with a 150 hp engine, a propeller and flaps. Pick it on the
   menu, with its livery (Cub yellow or Bush red); the glider has two liveries too.
 - A runway start for airplanes with an engine: at rest on the runway, ready to roll. The slider on the
-  left is the throttle, with its percentage above it; at idle the wheel brakes are on. The flaps button
+  left is the throttle, with its percentage above it; at idle the wheel brakes come on once the
+  tailwheel is down, so a wheel landing doesn't tip the Cub onto its nose. The flaps button
   on the right lowers the flaps to 50° and raises them again (F on a keyboard, the right shoulder
   button on a gamepad).
 - On the ground, turning the phone steers with the rudder, and auto-rudder keeps the takeoff roll
