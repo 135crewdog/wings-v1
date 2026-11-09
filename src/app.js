@@ -14,14 +14,18 @@ import { loadAircraft } from "./render/aircraft.js";
 import { createChaseCamera } from "./render/camera.js";
 import { createControls } from "./input/controls.js";
 import { format, readouts } from "./ui/readouts.js";
+import { createAssists } from "./input/assists.js";
 
 const MAX_STEPS = 10; // per frame; past that the sim falls behind rather than spiralling
 const $ = (id) => document.getElementById(id);
 const getJSON = (path) => fetch(path).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${path}: ${r.status}`))));
 
 // ---- settings, kept per device ----
-const settings = { hud: true, debug: false };
-try { Object.assign(settings, JSON.parse(localStorage.getItem("wings.settings") || "{}")); } catch {}
+const settings = { hud: true, debug: false, assists: { rudder: true, trim: true, level: true } };
+try {
+  const saved = JSON.parse(localStorage.getItem("wings.settings") || "{}");
+  Object.assign(settings, saved, { assists: { ...settings.assists, ...(saved.assists ?? {}) } });
+} catch {}
 const saveSettings = () => { try { localStorage.setItem("wings.settings", JSON.stringify(settings)); } catch {} };
 
 // ---- renderer ----
@@ -48,7 +52,7 @@ $("version").textContent = `Wings ${APP_VERSION}`;
 
 // ---- flight state ----
 let card, place, ground, world, aircraft;
-let sim = null, prev = null, startId = "high", trimElevator = 0;
+let sim = null, prev = null, startId = "high", assists = null;
 let mode = "menu"; // menu | flying | paused | crashed
 let ready = false; // the card, the place and the model have all loaded
 let acc = 0;
@@ -77,7 +81,7 @@ function start(id) {
   startId = id;
   const pose = startPose(place, id);
   const trim = glide(card, pose.speed, { altitude: pose.altitude });
-  trimElevator = trim.elevator; // the trim lever: the stick adds to it (docs/controls.md)
+  assists = createAssists(card, trim.elevator); // the trim starts where the start's glide needs it
   sim = new Sim(card, glideState(trim, pose.altitude, { heading: pose.heading, north: pose.north, east: pose.east }), { ground });
   prev = sim.state;
   acc = 0;
@@ -110,6 +114,7 @@ function show() {
   $("debug").hidden = !flying || !settings.debug;
   $("b-hud").classList.toggle("on", settings.hud);
   $("b-debug").classList.toggle("on", settings.debug);
+  for (const k of ["rudder", "trim", "level"]) $(`b-auto-${k}`).classList.toggle("on", settings.assists[k]);
 }
 
 // ---- buttons ----
@@ -127,6 +132,9 @@ $("b-restart").addEventListener("click", () => ready && start(startId));
 $("b-recenter").addEventListener("click", () => controls.tilt.calibrate());
 $("b-hud").addEventListener("click", () => { settings.hud = !settings.hud; saveSettings(); show(); });
 $("b-debug").addEventListener("click", () => { settings.debug = !settings.debug; saveSettings(); show(); });
+for (const k of ["rudder", "trim", "level"]) {
+  $(`b-auto-${k}`).addEventListener("click", () => { settings.assists[k] = !settings.assists[k]; saveSettings(); show(); });
+}
 $("message-go").addEventListener("click", () => {
   if (mode === "crashed") return start(startId);
   controls.tilt.calibrate();
@@ -179,7 +187,8 @@ function frame(now) {
   if (!sim) { renderer.render(world.scene, chase.camera); return; }
 
   const ctl = controls.update(dt);
-  const flown = { ...ctl, elevator: Math.max(-1, Math.min(1, trimElevator + ctl.elevator)) };
+  // The assists move the controls as a pilot would (docs/controls.md); they never touch a force.
+  const flown = assists ? assists.update(ctl, sim, sim.observe(ctl), mode === "flying" ? dt : 0, settings.assists) : { ...ctl };
   stepsLast = 0;
   if (mode === "flying") {
     acc += dt;
@@ -211,8 +220,7 @@ function frame(now) {
 
   pos.fromArray(nedToThree(x));
   chase.update(pos, aircraft.object.quaternion, dt, place.ground.height_m);
-  const heading = Math.atan2(2 * (q[0] * q[3] + q[1] * q[2]), 1 - 2 * (q[2] * q[2] + q[3] * q[3]));
-  world.shadow(pos.toArray(), heading, -x[2] - place.ground.height_m);
+  const shadow = world.shadow(pos.toArray(), card.b, card.cbar);
   renderer.render(world.scene, chase.camera);
 
   if (settings.hud) {
@@ -225,7 +233,8 @@ function frame(now) {
   brakeEl.setAttribute("aria-valuenow", String(Math.round(ctl.airbrake * 100)));
   if (settings.debug) {
     const info = renderer.info.render;
-    $("debug").textContent = `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms · ${info.calls} draws · ${stepsLast} steps · ${controls.source}`;
+    const sh = shadow.visible ? `shadow ${shadow.w.toFixed(2)} m edge, ${shadow.radius.toFixed(1)} px` : "shadow off";
+    $("debug").textContent = `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms · ${info.calls} draws · ${sh} · ${stepsLast} steps · ${controls.source}`;
   }
 }
 

@@ -1,0 +1,4 @@
+{
+  "about": "The airplanes the app and the hangar offer, in roster order (docs/aircraft.md). Each id is a card in data/aircraft/.",
+  "aircraft": ["twin-ii-acro"]
+}

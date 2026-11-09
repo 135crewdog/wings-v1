@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.2
+
+- The glider casts a real shadow on the ground, sharp up close and softer the higher you fly, as the
+  sun's own blur makes it. It helps judge height in the flare.
+- Ground effect: close to the runway the wing makes less drag, so the glider floats in the flare.
+- The glider's handling was checked against the standard limits for good handling and tuned: pitch
+  is better damped, and it holds a bank or comes back from a gust more steadily.
+- Three assists, each with its own switch on the pause screen and on by default. Auto-rudder keeps
+  turns coordinated. Auto-trim takes over a held stick, so letting go keeps the speed you were
+  flying. Auto-level rolls the wings gently back to level when you hold the phone at neutral.
+- The hangar: a page with each airplane's figures (stall speeds, best glide, turn performance, roll
+  rate, handling), its turn-rate diagram and sliders to try changes to its numbers. Open it from the
+  menu.
+
 ## 0.1.1
 
 - Landings: the elevator is less sensitive. The stall now takes most of the tilt instead of a third

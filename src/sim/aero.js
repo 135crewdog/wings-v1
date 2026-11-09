@@ -39,7 +39,7 @@ export function elevatorCm(c, de) {
 }
 
 /**
- * Coefficients (§6) for air data { alpha, beta, mach, phat, qhat, rhat } and controls
+ * Coefficients (§6) for air data { alpha, beta, mach, phat, qhat, rhat, ge? } and controls
  * { elevator, aileron, rudder, airbrake }.
  */
 export function coefficients(c, air, ctl) {
@@ -53,7 +53,7 @@ export function coefficients(c, air, ctl) {
 
   const sinA = Math.sin(alpha);
   const CD =
-    (1 - sigma) * (c.cd0 + c.K * CLatt * CLatt) +
+    (1 - sigma) * (c.cd0 + (air.ge ?? 1) * c.K * CLatt * CLatt) +
     sigma * (c.cd0 + 2 * sinA * sinA) +
     waveDrag(c, mach) +
     c.airbrake.cd * db;
@@ -87,6 +87,15 @@ export function airData(c, v, q, omega, windW, atm) {
   out.qhat = (omega[1] * c.cbar) / (2 * V);
   out.rhat = (omega[2] * c.b) / (2 * V);
   return out;
+}
+
+/**
+ * McCormick's ground-effect factor on induced drag (§6.2) at height h (m) of the CG above the
+ * ground, for span b: (16 h/b)² / (1 + (16 h/b)²). 1 far from the ground.
+ */
+export function groundEffect(h, b) {
+  const x = (16 * Math.max(0, h)) / b;
+  return (x * x) / (1 + x * x);
 }
 
 /** Lift direction in body axes for unit airflow V̂: normalize(ŷ × V̂) (§7). */

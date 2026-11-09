@@ -35,6 +35,20 @@ Undecided: a B-26 (Martin Marauder or Douglas Invader), added or replacing the K
 A target is never loosened to make a test pass. If a published figure looks wrong, note it in the
 target and ask.
 
+## The hangar
+
+`hangar.html`, in the deployed app, shows every airplane on the roster (`data/roster.json`) from the
+same `src/sim/` code that flies it: no copy of the physics. For each: the planform drawn from the card
+(span, area, taper, quarter-chord sweep), the figures of `docs/flight-model.md` sections 9 and 12 in
+pilot terms and the units of the HUD (knots, feet per minute, degrees per second), each named for
+exactly what it is, and its energy-manoeuvrability diagram. The landing-configuration stall is with
+the airbrakes open for a glider and with landing flaps for an airplane that has them. Figures an
+airplane doesn't have (a glider's best climb) say so. No arcade ratings.
+
+Its tuning panel moves the main card numbers with sliders and redraws every figure live. Edits stay in
+that browser (`localStorage`), never change the card the app flies, and can be copied as the card's
+JSON to paste into `data/aircraft/<id>.json` with a source note.
+
 ## Grob G 103 A Twin II Acro
 
 A two-seat training glider with strengthened spar caps and steel pushrods for basic aerobatics.
@@ -99,6 +113,21 @@ a near-sharp stall the sim reproduces the table above exactly, so the code agree
 outside calculation and the difference is the blend. 2.0° passes every M1 target and puts minimum sink
 at 0.708 m/s at 86 km/h, close to the manual's 0.70 at 85. It stays `est` for M3 to revisit against
 the stall behaviour.
+
+**Handling, set at M3.** Linearized at 95 and 130 km/h (`node tools/fly.js twin-ii-acro --handling`),
+the first card failed two of the bounds in `docs/flight-model.md` section 12: phugoid damping 0.034
+and 0.038 (bound 0.04), and a spiral that doubled in 16.4 s at 95 km/h (bound 20 s). Three `est`
+numbers changed, each toward what the airframe's geometry gives:
+
+| Field | Before | After | Why |
+| --- | --- | --- | --- |
+| `cmq` | −20 | −30 | the tailplane's volume (about 2.7 m² at 4.8 m from the CG) gives −25, and its lag behind the wing's downwash adds to it |
+| `cl_beta` | −0.08 | −0.10 | 3.5° of dihedral on a mid wing gives about −0.08; −0.10 is within that estimate's uncertainty |
+| `cnr` | −0.08 | −0.09 | the fin alone gives about −0.04, and the wing and fuselage add to it |
+
+Phugoid damping became 0.072 and 0.061, and the spiral doubles in 27 s at 95 km/h and is stable at 130.
+No performance figure changed. Real gliders are often mildly spirally unstable at low speed; this card
+sits just inside the bound.
 
 ### Targets
 

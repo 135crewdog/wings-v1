@@ -12,11 +12,31 @@ largest offer by size wins, so a gamepad or keyboard can always override tilt. T
 with a position: the on-screen slider sets it, and keys and the gamepad move it. It stays where it was
 left.
 
-## Elevator trim
+## Assists
 
-Gliders fly hands off on a trim lever, and so does this one. Each start sets the trim to the
-elevator its trimmed glide needs (`trim.js`), and the stick adds to it: with tilt at neutral, the
-glider holds its start speed. The sum is clamped to the elevator's −1 to 1.
+On a phone there aren't enough intuitive controls for everything a pilot's hands and feet do, so three
+assists do some of it. Each one moves a control the way a pilot would and never touches a force
+(`CLAUDE.md`): the moving surfaces on the model show what it does. Each has its own switch on the
+pause screen, on by default. The maths is in `src/input/assists.js`, pure and tested.
+
+**Auto-rudder.** Keeps the sideslip near zero, as a pilot's feet keep the slip ball centred. It leads
+with rudder against the yaw the ailerons make (the card's `aileron.cn_full` over `rudder.cn_full`), and
+adds rudder in proportion to the sideslip that remains: full rudder at 4° of sideslip. It works only
+while the pilot isn't using the rudder; a gamepad's triggers or the Q and E keys take over at once.
+
+**Auto-trim.** Gliders and light airplanes fly hands off on a trim lever; here there is no lever, so
+the trim works itself. While the stick is held off centre, the trim slowly takes over the held amount
+(a time constant of 3 s), and the stick's own share shrinks by the same amount, so the elevator doesn't
+move while it happens and never fights a manoeuvre. Easing the stick back toward neutral then moves
+nothing: the trim keeps what it took, so letting go holds the speed you were flying. From the new
+neutral, the stick has its full travel again both ways. It trims only in steady flight: in the air,
+between 0.7 and 1.3 g, banked less than 30° and not stalled. A loop or a steep turn doesn't wind it.
+Each start sets the trim for the start's speed. Off, the trim stays where the start set it and the
+stick adds to it.
+
+**Auto-level (tilt).** With the phone held at neutral, the wings roll gently back to level instead of
+holding the bank: aileron in proportion to the bank and the roll rate, at most 40% of the travel.
+Any roll input from the pilot takes over at once.
 
 ## Shaping
 
