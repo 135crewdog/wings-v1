@@ -277,21 +277,39 @@ function frame(now) {
 // ---- load ----
 /** Fly this airplane: its card, its model (loaded once) and its livery; the menu's still view. */
 async function choose(id) {
-  const json = cards.get(id);
-  card = loadCard(json);
-  settings.airplane = id;
-  saveSettings();
-  if (!models.has(id)) models.set(id, await loadAircraft(card.glb, card.cg));
-  if (aircraft) world.scene.remove(aircraft.object);
-  aircraft = models.get(id);
-  world.scene.add(aircraft.object);
-  await livery(settings.livery[id] ?? 0);
-  controls.configure({ lever: powered() ? "throttle" : "airbrake", flapTravel: card.flaps.present ? card.flaps.travel : null });
-  // a still view of the field behind the menu
-  sim = new Sim(card, glideState(handlingTrim(card, 95 / 3.6, { altitude: 60 }), 60, { north: -900 }), { ground });
-  prev = sim.state;
-  pickers();
-  show();
+  // No start while the airplane changes: the new card, model, livery and controls go in together.
+  const wasReady = ready;
+  ready = false;
+  enableStarts(false);
+  try {
+    const next = loadCard(cards.get(id));
+    if (!models.has(id)) models.set(id, await loadAircraft(next.glb, next.cg));
+    const model = models.get(id);
+    const list = next.json.glb.liveries ?? [];
+    const i = settings.livery[id] ?? 0;
+    await model.setLivery(i > 0 ? list[i]?.texture ?? null : null);
+    if (aircraft) world.scene.remove(aircraft.object);
+    card = next;
+    aircraft = model;
+    world.scene.add(aircraft.object);
+    settings.airplane = id;
+    saveSettings();
+    controls.configure({ lever: powered() ? "throttle" : "airbrake", flapTravel: card.flaps.present ? card.flaps.travel : null });
+    // a still view of the field behind the menu
+    sim = new Sim(card, glideState(handlingTrim(card, 95 / 3.6, { altitude: 60 }), 60, { north: -900 }), { ground });
+    prev = sim.state;
+    pickers();
+    show();
+  } finally {
+    if (wasReady) {
+      ready = true;
+      enableStarts(true);
+    }
+  }
+}
+
+function enableStarts(on) {
+  for (const b of document.querySelectorAll("[data-start]")) b.disabled = !on;
 }
 
 async function livery(i) {
@@ -314,7 +332,7 @@ function pickers() {
     }));
   };
   const ids = [...cards.keys()];
-  row($("pick-airplane"), ids.map((id) => cards.get(id).name), ids.indexOf(card.id), (i) => ready && choose(ids[i]));
+  row($("pick-airplane"), ids.map((id) => cards.get(id).name), ids.indexOf(card.id), (i) => ready && mode === "menu" && choose(ids[i]));
   const list = card.json.glb.liveries ?? [];
   row($("pick-livery"), list.map((l) => l.name), settings.livery[card.id] ?? 0, (i) => livery(i));
   $("menu-about").textContent = powered()
@@ -330,7 +348,7 @@ Promise.all([getJSON("data/roster.json"), getJSON("data/places/test-grid.json"),
     world = createWorld(renderer, place);
     await choose(cards.has(settings.airplane) ? settings.airplane : roster.aircraft[0]);
     ready = true; // only now may a start begin: nothing after this replaces the flight
-    for (const b of document.querySelectorAll("[data-start]")) b.disabled = false;
+    enableStarts(true);
     $("menu-status").textContent = "Choose a start. The first tap asks for motion access.";
     renderer.setAnimationLoop(frame);
   })
