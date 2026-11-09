@@ -84,6 +84,15 @@ parabola. That's why the targets check the sink rate tightly and only report the
 Everything marked `est` (stability, control powers, inertia, zero-lift angle, stall softness) is a
 first guess from geometry and typical gliders, to be set at M3 against handling targets and feel.
 
+**Stall softness, set at M1.** The first card had `stall_softness_deg` 3.8. In the sim, the stall blend
+of `docs/flight-model.md` §6.1 is then already 2–14% active between 0° and 8° of α. That gave best
+glide 36.3 at 108 km/h and minimum sink 0.757 m/s at 92 km/h (580 kg), failing the sink targets.
+And no blend centre could give `cl_min` −0.80: the attached trough is never shallower than −0.854. With
+a near-sharp stall the sim reproduces the table above exactly, so the code agrees with the
+outside calculation and the difference is the blend. 2.0° passes every M1 target and puts minimum sink
+at 0.708 m/s at 86 km/h, close to the manual's 0.70 at 85. It stays `est` for M3 to revisit against
+the stall behaviour.
+
 ### Targets
 
 The card's `targets` list is the source of truth. M1 checks the `M1` entries; M3 adds the spin.

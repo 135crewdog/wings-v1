@@ -91,6 +91,12 @@ CL = (1 − σ) CL_att + σ CL_fp + ΔCL_devices + CLq q̂ + CLδe δe
 
 - `w` is the card's stall softness (`stall_softness_deg`, in radians here). Small `w` is a sharp break,
   large `w` a gentle one.
+- The logistic weights are never exactly zero. Several `w` below the stall, σ+ is still a few percent,
+  which bends the attached lift curve and adds flat-plate drag in normal flight. A large `w` costs
+  glide performance and moves minimum sink to a higher speed (`docs/aircraft.md`, Twin II Acro).
+  It also limits how small `CLmax` and `|CLmin|` can be: the attached peak only exists once the centre
+  is far enough from α0, so a soft stall cannot have a shallow first peak. The loader stops with an
+  error when no centre gives the card's value.
 - `α_c+` is not on the card. The loader solves for it (bisection) so that the **first peak** of the
   blended curve above α0 equals `CLmax` exactly. `α_c−` likewise for `CLmin`, searching downward.
   This keeps the card in pilot terms: you set CLmax, which sets stall speed.

@@ -25,7 +25,7 @@
     "alpha0_deg": -4.0,
     "cl_max": 1.20,
     "cl_min": -0.80,
-    "stall_softness_deg": 3.8,
+    "stall_softness_deg": 2.0,
     "oswald_e": 0.85
   },
   "drag": {
