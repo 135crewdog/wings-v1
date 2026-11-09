@@ -3,7 +3,7 @@
 // with its milestone.
 
 import { atmosphere } from "./atmosphere.js";
-import { aeroForces, airData } from "./aero.js";
+import { aeroForces, airData, groundEffect } from "./aero.js";
 import { rk4Step } from "./body.js";
 import { contactForces, crashCheck, touching } from "./contact.js";
 import { qrotate, qrotateInv } from "./vec.js";
@@ -33,6 +33,7 @@ export function normalizeControls(ctl = {}) {
 export function totalForces(card, state, t, ctl, wind = stillAir, ground = null) {
   const atm = atmosphere(-state.x[2]);
   const air = airData(card, state.v, state.q, state.omega, wind(state.x, t), atm);
+  if (ground) air.ge = groundEffect(-state.x[2] - ground.heightAt(state.x[0], state.x[1]), card.b); // §6.2
   const aero = aeroForces(card, air, ctl);
   const contact = contactForces(card, state, ground, ctl);
   const g = qrotateInv(state.q, G_W);

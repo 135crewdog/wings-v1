@@ -108,8 +108,21 @@ CL = (1 − σ) CL_att + σ CL_fp + ΔCL_devices + CLq q̂ + CLδe δe
 ### 6.2 Drag
 
 ```
-CD = (1 − σ)(CD0 + K CL_att²) + σ (CD0 + 2 sin²α) + ΔCD_wave(M) + ΔCD_devices
+CD = (1 − σ)(CD0 + φ_ge K CL_att²) + σ (CD0 + 2 sin²α) + ΔCD_wave(M) + ΔCD_devices
 ```
+
+**Ground effect.** Near the ground the wing's downwash is blocked and its induced drag falls. `φ_ge`
+is McCormick's factor (B. W. McCormick, *Aerodynamics, Aeronautics and Flight Mechanics*):
+
+```
+φ_ge = (16 h/b)² / (1 + (16 h/b)²)          h: the CG's height above the ground under it
+```
+
+It is 0.72 at a tenth of the span, 0.91 at a fifth and 0.98 at half a span, and 1 with no ground
+(headless flight, the trim and the performance figures). The CG stands in for the wing: on every card
+so far the wing is within a metre of it. Nothing else changes: lift, the stall and the moments are as
+in free air. An airplane floats in the flare because it keeps its energy longer, not because a force
+holds it up.
 
 Wave drag (zero for subsonic cards):
 
