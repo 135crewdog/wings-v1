@@ -1,0 +1,492 @@
+{
+ "id": "twin-ii-acro",
+ "units": "ft; x aft from the nose tip, y left, z up from the nose tip",
+ "model": "Grob G 103 A Twin II Acro",
+ "markings": "N103TG: the registration of a standard Twin II (s/n 3829) flown at Moriarty, NM; a deliberate cosmetic deviation from the Acro",
+ "source": "Fuselage, wing, ailerons, airbrakes and tail traced from the G 103 A Twin II Acro three-view (scaled to 17.5 m span; fuselage as smoothing splines, rms 7 mm) and checked against photos; control travels from the Twin II Acro TCDS and BGA data sheet; tyres 6.00-6 main, 260x85 nose, 210x65 tail from the Twin II flight manual, which the Acro's manual supplements; wing section E603, dihedral and incidence from Grob handbooks.",
+ "texture": {
+  "size": 2048
+ },
+ "skins": [
+  "../skins/twin-ii-acro/club-white.json",
+  "../skins/twin-ii-acro/cadet-red.json"
+ ],
+ "fuselage": {
+  "profile_z": [
+   -0.96,
+   -0.8,
+   -0.55,
+   -0.25,
+   0.0,
+   0.15,
+   0.3,
+   0.45,
+   0.62,
+   0.78,
+   0.9,
+   0.97
+  ],
+  "stations": [
+   {
+    "x": 0.0,
+    "w": 0.0,
+    "h": 0.0,
+    "z": 0.0,
+    "n": 2.0
+   },
+   {
+    "x": 0.05,
+    "w": 0.237,
+    "h": 0.117,
+    "z": 0.007,
+    "n": 2.0
+   },
+   {
+    "x": 0.2,
+    "w": 0.48,
+    "h": 0.431,
+    "z": 0.028,
+    "n": 2.0
+   },
+   {
+    "x": 0.35,
+    "w": 0.645,
+    "h": 0.699,
+    "z": 0.048,
+    "n": 2.0
+   },
+   {
+    "x": 0.5,
+    "w": 0.782,
+    "h": 0.928,
+    "z": 0.067,
+    "n": 2.0
+   },
+   {
+    "x": 0.8,
+    "w": 1.016,
+    "h": 1.289,
+    "z": 0.104,
+    "n": 2.0
+   },
+   {
+    "x": 1.2,
+    "w": 1.284,
+    "h": 1.637,
+    "z": 0.151,
+    "n": 2.011
+   },
+   {
+    "x": 1.6,
+    "w": 1.524,
+    "h": 1.923,
+    "z": 0.202,
+    "n": 2.039
+   },
+   {
+    "x": 2.0,
+    "w": 1.752,
+    "h": 2.181,
+    "z": 0.26,
+    "n": 2.075
+   },
+   {
+    "x": 2.4,
+    "w": 1.883,
+    "h": 2.41,
+    "z": 0.322,
+    "n": 2.111
+   },
+   {
+    "x": 2.8,
+    "w": 2.04,
+    "h": 2.607,
+    "z": 0.384,
+    "n": 2.139
+   },
+   {
+    "x": 3.2,
+    "w": 2.146,
+    "h": 2.772,
+    "z": 0.442,
+    "n": 2.15
+   },
+   {
+    "x": 3.9,
+    "w": 2.273,
+    "h": 2.991,
+    "z": 0.532,
+    "n": 2.15
+   },
+   {
+    "x": 4.8,
+    "w": 2.395,
+    "h": 3.176,
+    "z": 0.627,
+    "n": 2.15
+   },
+   {
+    "x": 5.7,
+    "w": 2.442,
+    "h": 3.278,
+    "z": 0.705,
+    "n": 2.15
+   },
+   {
+    "x": 6.6,
+    "w": 2.44,
+    "h": 3.32,
+    "z": 0.777,
+    "n": 2.15
+   },
+   {
+    "x": 7.5,
+    "w": 2.417,
+    "h": 3.326,
+    "z": 0.849,
+    "n": 2.15
+   },
+   {
+    "x": 8.4,
+    "w": 2.378,
+    "h": 3.315,
+    "z": 0.928,
+    "n": 2.15
+   },
+   {
+    "x": 9.3,
+    "w": 2.323,
+    "h": 3.218,
+    "z": 0.973,
+    "n": 2.15
+   },
+   {
+    "x": 10.2,
+    "w": 2.187,
+    "h": 2.943,
+    "z": 0.936,
+    "n": 2.138
+   },
+   {
+    "x": 11.1,
+    "w": 2.016,
+    "h": 2.657,
+    "z": 0.895,
+    "n": 2.097
+   },
+   {
+    "x": 12.0,
+    "w": 1.863,
+    "h": 2.382,
+    "z": 0.856,
+    "n": 2.047
+   },
+   {
+    "x": 13.2,
+    "w": 1.669,
+    "h": 2.045,
+    "z": 0.807,
+    "n": 2.002
+   },
+   {
+    "x": 14.843,
+    "w": 1.472,
+    "h": 1.658,
+    "z": 0.743,
+    "n": 2.0
+   },
+   {
+    "x": 16.486,
+    "w": 1.297,
+    "h": 1.365,
+    "z": 0.692,
+    "n": 2.0
+   },
+   {
+    "x": 18.129,
+    "w": 1.128,
+    "h": 1.161,
+    "z": 0.662,
+    "n": 2.0
+   },
+   {
+    "x": 19.771,
+    "w": 1.015,
+    "h": 1.023,
+    "z": 0.649,
+    "n": 2.0
+   },
+   {
+    "x": 21.414,
+    "w": 0.909,
+    "h": 0.915,
+    "z": 0.646,
+    "n": 2.0
+   },
+   {
+    "x": 23.057,
+    "w": 0.78,
+    "h": 0.805,
+    "z": 0.646,
+    "n": 2.0
+   },
+   {
+    "x": 24.7,
+    "w": 0.52,
+    "h": 0.657,
+    "z": 0.641,
+    "n": 2.0
+   }
+  ]
+ },
+ "surfaces": [
+  {
+   "name": "wing",
+   "part": "wing",
+   "mirror": true,
+   "vertical": false,
+   "root": {
+    "x": 8.19,
+    "y": 0.0,
+    "z": 0.7
+   },
+   "dihedral_deg": 3.5,
+   "incidence_deg": 2.5,
+   "airfoil": {
+    "thickness": 0.19,
+    "camber": 0.033
+   },
+   "sections": [
+    {
+     "s": 0.0,
+     "x_le": 0.0,
+     "chord": 4.25
+    },
+    {
+     "s": 16.2,
+     "x_le": 0.0,
+     "chord": 3.37
+    },
+    {
+     "s": 27.7,
+     "x_le": 0.0,
+     "chord": 1.98
+    },
+    {
+     "s": 28.05,
+     "x_le": 0.03,
+     "chord": 1.91
+    },
+    {
+     "s": 28.35,
+     "x_le": 0.12,
+     "chord": 1.84
+    },
+    {
+     "s": 28.71,
+     "x_le": 0.45,
+     "chord": 1.35
+    }
+   ],
+   "split": {
+    "hinge_chord": [
+     [
+      16.2,
+      0.66
+     ],
+     [
+      28.05,
+      0.55
+     ]
+    ],
+    "spans": [
+     {
+      "s0": 16.2,
+      "s1": 28.05,
+      "control": {
+       "name": "aileron_{side}",
+       "min_deg": -25.6,
+       "max_deg": 13.9,
+       "positive": "trailing edge down",
+       "source": "Twin II Acro TCDS / BGA data sheet: travel up 90 / down 50 mm, measured 208 mm from the hinge"
+      }
+     }
+    ]
+   },
+   "airbrakes": [
+    {
+     "name": "airbrake_{side}",
+     "s0": 7.9,
+     "s1": 12.49,
+     "frac": 0.44,
+     "height": 0.6,
+     "travel": 0.583,
+     "gap": 0.16,
+     "cap_width": 0.24,
+     "source": "Schempp-Hirth type upper-surface brakes; span 1.4 m as drawn; extend 7.0 in (178 mm) at the inner end (Twin II Acro TCDS)"
+    }
+   ]
+  },
+  {
+   "name": "fin",
+   "part": "tail",
+   "mirror": false,
+   "vertical": true,
+   "root": {
+    "x": 21.25,
+    "y": 0.0,
+    "z": 0.33
+   },
+   "airfoil": {
+    "thickness": 0.12,
+    "camber": 0.0
+   },
+   "sections": [
+    {
+     "s": 0.0,
+     "x_le": 0.0,
+     "chord": 4.55
+    },
+    {
+     "s": 0.77,
+     "x_le": 1.22,
+     "chord": 3.8
+    },
+    {
+     "s": 3.94,
+     "x_le": 2.488,
+     "chord": 2.772
+    },
+    {
+     "s": 4.17,
+     "x_le": 2.58,
+     "chord": 2.62
+    },
+    {
+     "s": 4.41,
+     "x_le": 2.676,
+     "chord": 1.87
+    },
+    {
+     "s": 4.52,
+     "x_le": 2.72,
+     "chord": 1.93
+    }
+   ],
+   "split": {
+    "hinge_x": [
+     [
+      0.0,
+      24.6631
+     ],
+     [
+      4.52,
+      25.7118
+     ]
+    ],
+    "spans": [
+     {
+      "s0": 0.0,
+      "s1": 4.41,
+      "control": {
+       "name": "rudder",
+       "min_deg": -31.2,
+       "max_deg": 31.2,
+       "positive": "trailing edge left (left pedal, nose left)",
+       "source": "Twin II Acro TCDS / BGA data sheet: travel 233 mm each way, measured 450 mm from the hinge"
+      }
+     },
+     {
+      "s0": 4.41,
+      "s1": 4.52,
+      "none": true
+     }
+    ]
+   }
+  },
+  {
+   "name": "htail",
+   "part": "tail",
+   "mirror": true,
+   "vertical": false,
+   "root": {
+    "x": 23.78,
+    "y": 0.0,
+    "z": 4.9
+   },
+   "airfoil": {
+    "thickness": 0.1,
+    "camber": 0.0
+   },
+   "sections": [
+    {
+     "s": 0.0,
+     "x_le": 0.0,
+     "chord": 2.74
+    },
+    {
+     "s": 5.2,
+     "x_le": 0.74,
+     "chord": 1.55
+    },
+    {
+     "s": 5.44,
+     "x_le": 0.95,
+     "chord": 1.34
+    }
+   ],
+   "split": {
+    "hinge_x": [
+     [
+      0.0,
+      25.73
+     ],
+     [
+      5.44,
+      25.73
+     ]
+    ],
+    "spans": [
+     {
+      "s0": 0.0,
+      "s1": 5.44,
+      "control": {
+       "name": "elevator",
+       "min_deg": -23.3,
+       "max_deg": 17.9,
+       "positive": "trailing edge down",
+       "source": "Twin II Acro TCDS, elevator with spring trim (s/n 3839-K on, AM 315-13/1, AM 315-14): up 3.74 in / down 2.91 in, measured 9.45 in from the hinge at the elevator inboard edge, which matches this elevator's 241 mm root chord"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "struts": [],
+ "wheels": [
+  {
+   "x": 9.85,
+   "y": 0.0,
+   "z": -0.61,
+   "r": 0.73,
+   "w": 0.5,
+   "mirror": false
+  },
+  {
+   "x": 2.75,
+   "y": 0.0,
+   "z": -0.98,
+   "r": 0.426,
+   "w": 0.279,
+   "mirror": false
+  },
+  {
+   "x": 24.04,
+   "y": 0.0,
+   "z": 0.28,
+   "r": 0.345,
+   "w": 0.213,
+   "mirror": false
+  }
+ ]
+}
