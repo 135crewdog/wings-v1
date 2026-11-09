@@ -31,3 +31,23 @@ test("two identical runs produce identical states, bit for bit", () => {
   }
   assert.ok(a.x.every(Number.isFinite) && a.q.every(Number.isFinite), "the flight stayed finite");
 });
+
+test("with ground contact, two identical landings are identical, bit for bit", async () => {
+  const { card, gliding, newSim } = await import("./flight-helpers.js");
+  const land = () => {
+    const c = card();
+    const { trim, state } = gliding(c, 95, 10, { north: -450 });
+    const sim = newSim(c, state);
+    for (let i = 0; i < 40 * 120; i++) {
+      const t = i / 120;
+      sim.step({ elevator: trim.elevator + 0.1 * Math.sin(t), aileron: 0.05 * Math.sin(2 * t), airbrake: t > 20 ? 1 : 0 });
+    }
+    return sim;
+  };
+  const a = land(), b = land();
+  assert.deepEqual(a.crashed, b.crashed);
+  assert.deepEqual(a.touching, b.touching);
+  for (const key of ["x", "v", "q", "omega"]) {
+    a.state[key].forEach((x, i) => assert.ok(Object.is(x, b.state[key][i]), `${key}[${i}]: ${x} vs ${b.state[key][i]}`));
+  }
+});

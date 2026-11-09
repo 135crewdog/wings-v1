@@ -171,6 +171,22 @@ export function loadCard(json, { mass_kg } = {}) {
     rudder: { cn: ctl.rudder.cn_full, cy: ctl.rudder.cy_full, cl: ctl.rudder.cl_full },
     // devices (§6.4)
     airbrake: { cd: brake.cd, dclmax: brake.dclmax, cm: brake.cm },
+    // the airframe: where the CG is on the model, the model file, and the ground contact (§11)
+    cg: { fromNose: json.cg?.from_nose_m ?? 0, aboveNose: json.cg?.above_nose_m ?? 0 },
+    glb: json.glb?.file ?? null,
+    contacts: (json.contacts ?? []).map((p) => ({
+      name: p.name,
+      wheel: p.type === "wheel",
+      r: p.pos_m.slice(),
+      k: p.k,
+      c: p.c,
+      brake: p.brake === true,
+    })),
+    wheelBrakeFrom: json.wheel_brake?.from_airbrake_above ?? Infinity,
+    crash: {
+      wheelSink: json.crash?.wheel_sink_ms ?? Infinity,
+      skidSpeed: json.crash?.skid_speed_ms ?? Infinity,
+    },
     // limits
     limits: limitsSI(json.limits),
     vne: json.limits?.vne_kmh != null ? json.limits.vne_kmh * KMH : json.limits?.vne_kt != null ? json.limits.vne_kt * KT : null,

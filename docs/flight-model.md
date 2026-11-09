@@ -217,6 +217,11 @@ Each card is `data/aircraft/<id>.json`. Groups and fields:
 | `control` | `elevator` {cm_full_up, cm_full_down}, `aileron` {cl_full, cn_full}, `rudder` {cn_full, cy_full, cl_full} |
 | `devices` | `airbrake` {cd, dclmax, cm} (more device types later) |
 | `engines` | list; empty for a glider |
+| `cg` | `from_nose_m`, `above_nose_m`: the CG's place on the airframe, from the model's origin at the nose tip |
+| `glb` | `file` (the model, `assets/models/<id>.glb`), `origin` (where the model's origin is on the airframe) |
+| `contacts` | list of contact points (section 11), each `name`, `type` (`wheel` or `skid`), `pos_m` (body axes from the CG), `k` (N/m), `c` (N·s/m), and for a wheel `brake` (true when it has one) |
+| `wheel_brake` | `from_airbrake_above`: the airbrake lever position past which the wheel brakes are on |
+| `crash` | `wheel_sink_ms`, `skid_speed_ms`: the touchdown limits of section 11.6 |
 | `limits` | `vne_kmh` or `vne_kt`, plus any other limit speeds and load factors |
 | `targets` | the numbers tests check, each with its mass, tolerance and source |
 | `src` | per group, a map from field to source key (`fm`, `bga`, `fit`, `est`, ...), or one string when the whole group shares a source |

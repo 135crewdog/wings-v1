@@ -55,6 +55,18 @@
     "airbrake": { "cd": 0.085, "dclmax": -0.27, "cm": 0.0 }
   },
   "engines": [],
+  "cg": { "from_nose_m": 2.80, "above_nose_m": 0.21 },
+  "glb": { "file": "assets/models/twin-ii-acro.glb", "origin": "nose tip, the shape file's airframe origin" },
+  "contacts": [
+    { "name": "main_wheel", "type": "wheel", "pos_m": [-0.20, 0, 0.62], "k": 120000, "c": 8000, "brake": true },
+    { "name": "nose_wheel", "type": "wheel", "pos_m": [ 1.97, 0, 0.64], "k": 40000,  "c": 3000 },
+    { "name": "tail_wheel", "type": "wheel", "pos_m": [-4.52, 0, 0.23], "k": 20000,  "c": 1500 },
+    { "name": "nose",       "type": "skid",  "pos_m": [ 2.80, 0, 0.21], "k": 50000,  "c": 4000 },
+    { "name": "tip_left",   "type": "skid",  "pos_m": [ 0.00, -8.75, -0.53], "k": 50000, "c": 4000 },
+    { "name": "tip_right",  "type": "skid",  "pos_m": [ 0.00,  8.75, -0.53], "k": 50000, "c": 4000 }
+  ],
+  "wheel_brake": { "from_airbrake_above": 0.95 },
+  "crash": { "wheel_sink_ms": 3.0, "skid_speed_ms": 5.0 },
   "limits": {
     "vne_kmh": 250,
     "vne_by_altitude_kmh": [[0, 250], [1981, 237], [3048, 225], [3962, 213], [5029, 202]],
@@ -97,6 +109,12 @@
     "stability": "est: all fields, set at M3 against handling targets",
     "control": "est: all fields, set at M3",
     "devices": { "airbrake": { "cd": "est", "dclmax": "fit", "cm": "est" } },
-    "limits": "fm and bga"
+    "limits": "fm and bga",
+    "cg": "est: about 30% of the mean chord behind the wing's leading edge",
+    "glb": "shape",
+    "contacts": { "pos_m": "shape: wheel bottoms, nose tip and wingtips from the traced shape file (feet, converted), relative to the estimated CG",
+                  "k": "est", "c": "est" },
+    "wheel_brake": "est: on many two-seat gliders the wheel brake works at the end of the airbrake lever's travel; check the flight manual",
+    "crash": "est"
   }
 }

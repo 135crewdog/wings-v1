@@ -45,6 +45,24 @@ test("every JSON file in data/ parses", () => {
   }
 });
 
+test("no JSON object in data/ repeats a key (JSON.parse would silently keep the last)", () => {
+  for (const f of filesUnder(join(ROOT, "data")).filter((x) => x.endsWith(".json"))) {
+    // Walk the text: at each object's depth, collect its keys.
+    const text = readFileSync(f, "utf8");
+    const stack = [];
+    const re = /"((?:[^"\\]|\\.)*)"\s*(:)?|[{}\[\]]/g;
+    for (let m; (m = re.exec(text)); ) {
+      if (m[0] === "{") stack.push(new Set());
+      else if (m[0] === "[") stack.push(null);
+      else if (m[0] === "}" || m[0] === "]") stack.pop();
+      else if (m[2] && stack.at(-1)) {
+        assert.ok(!stack.at(-1).has(m[1]), `${f}: key "${m[1]}" appears twice in one object`);
+        stack.at(-1).add(m[1]);
+      }
+    }
+  }
+});
+
 test("every icon the app names exists, at the size it claims", () => {
   const pngSize = (file) => {
     const b = readFileSync(join(ROOT, file));
