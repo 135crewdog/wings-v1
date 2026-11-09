@@ -7,7 +7,7 @@ const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const ease = (dt, tau) => 1 - Math.exp(-dt / tau);
 
 export function createChaseCamera(aspect) {
-  const camera = new THREE.PerspectiveCamera(55, aspect, 0.3, 30000);
+  const camera = new THREE.PerspectiveCamera(55, aspect, 0.5, 30000);
   const DIST = 24, RISE = 4.5, LOOK_UP = 4.0; // look above the glider: it sits low in the frame, the way ahead clear
   let heading = null, pitch = 0; // smoothed
   let lookYaw = 0, lookPitch = 0, dragging = false;

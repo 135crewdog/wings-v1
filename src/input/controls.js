@@ -6,8 +6,8 @@ import { createGamepad } from "./gamepad.js";
 import { createKeyboard } from "./keyboard.js";
 import { createTilt } from "./tilt.js";
 
-export function createControls({ onRestart, onFlip } = {}) {
-  const tilt = createTilt({ onFlip });
+export function createControls({ onRestart, onFlip, onNeutral } = {}) {
+  const tilt = createTilt({ onFlip, onNeutral });
   const gamepad = createGamepad();
   const keyboard = createKeyboard({ onRestart });
   const state = { elevator: 0, aileron: 0, rudder: 0, airbrake: 0 };

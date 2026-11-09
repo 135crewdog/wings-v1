@@ -91,27 +91,32 @@ export function createWorld(renderer, place) {
   scene.add(sun);
 
   const height = place.ground.height_m;
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE), new THREE.MeshLambertMaterial({ map: grassTexture(renderer) }));
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = height;
-  scene.add(ground);
+  // The flat layers (ground, runway, shadow) don't write depth and draw first, in that order, so they
+  // can never fight over which is in front: at a shallow angle a few centimetres apart, the depth
+  // buffer can't tell them apart and the runway shimmers. Nothing is ever below the ground.
+  const flat = (material, order, mesh) => {
+    material.depthWrite = false;
+    mesh.renderOrder = order;
+    return mesh;
+  };
+  const grass = new THREE.MeshLambertMaterial({ map: grassTexture(renderer) });
+  const groundMesh = flat(grass, -3, new THREE.Mesh(new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE), grass));
+  groundMesh.rotation.x = -Math.PI / 2;
+  groundMesh.position.y = height;
+  scene.add(groundMesh);
 
   for (const rw of place.runways) {
-    const mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(rw.width_m, rw.length_m),
-      new THREE.MeshLambertMaterial({ map: runwayTexture(rw, renderer), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
-    );
+    const asphalt = new THREE.MeshLambertMaterial({ map: runwayTexture(rw, renderer) });
+    const mesh = flat(asphalt, -2, new THREE.Mesh(new THREE.PlaneGeometry(rw.width_m, rw.length_m), asphalt));
     mesh.rotation.x = -Math.PI / 2; // the plane's +y (top of the texture) now points north (−z)
     mesh.rotation.z = (-rw.heading_deg * Math.PI) / 180;
     const c = nedToThree([rw.centre_m[0], rw.centre_m[1], -height]);
-    mesh.position.set(c[0], c[1] + 0.02, c[2]);
+    mesh.position.set(c[0], c[1], c[2]);
     scene.add(mesh);
   }
 
-  const shadow = new THREE.Mesh(
-    new THREE.PlaneGeometry(17.5, 8.5),
-    new THREE.MeshBasicMaterial({ map: shadowTexture(renderer), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })
-  );
+  const dark = new THREE.MeshBasicMaterial({ map: shadowTexture(renderer), transparent: true });
+  const shadow = flat(dark, -1, new THREE.Mesh(new THREE.PlaneGeometry(17.5, 8.5), dark));
   shadow.rotation.order = "YXZ";
   scene.add(shadow);
 
@@ -119,7 +124,7 @@ export function createWorld(renderer, place) {
     scene,
     /** Moves the shadow under the CG (Three axes), turned with the heading, fading with height. */
     shadow(cg, heading, heightAboveGround) {
-      shadow.position.set(cg[0], height + 0.04, cg[2]);
+      shadow.position.set(cg[0], height, cg[2]);
       shadow.rotation.set(-Math.PI / 2, -heading, 0, "YXZ");
       shadow.material.opacity = 0.45 * Math.max(0, 1 - heightAboveGround / 80);
       shadow.visible = shadow.material.opacity > 0.01;
