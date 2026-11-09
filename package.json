@@ -1,0 +1,11 @@
+{
+  "name": "wings",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A flight sim for the iPhone, built as a Three.js PWA.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "serve": "node tools/serve.js"
+  }
+}
