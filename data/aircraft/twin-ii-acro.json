@@ -1,0 +1,102 @@
+{
+  "id": "twin-ii-acro",
+  "name": "Twin II Acro",
+  "maker": "Grob",
+  "model": "G 103 A Twin II Acro",
+  "category": "glider",
+  "sources": {
+    "fm": "Grob G 103 Twin II flight manual (December 1980); the Acro's manual supplements it",
+    "bga": "BGA glider data sheet, Grob 103 Twin II / 103A Twin II Acro",
+    "shape": "models/shapes/twin-ii-acro.json, traced from the G 103 A three-view",
+    "fit": "solved from this card's targets with the model in docs/flight-model.md",
+    "est": "estimate, to be tuned by feel or replaced by a better source"
+  },
+  "mass": {
+    "mass_kg": 580,
+    "g_max": 5.3,
+    "g_min": -2.65,
+    "radii_of_gyration_m": { "roll": 2.2, "pitch": 1.4, "yaw": 2.6 }
+  },
+  "wing": {
+    "area_m2": 17.8,
+    "span_m": 17.5,
+    "sweep_deg": 0,
+    "taper": 0.45,
+    "alpha0_deg": -4.0,
+    "cl_max": 1.20,
+    "cl_min": -0.80,
+    "stall_softness_deg": 3.8,
+    "oswald_e": 0.85
+  },
+  "drag": {
+    "cd0": 0.0083,
+    "mach_dd": 0.75,
+    "cdw_peak": 0
+  },
+  "stability": {
+    "static_margin": 0.12,
+    "cl_trim0": 0.6,
+    "cmq": -20,
+    "cy_beta": -0.3,
+    "cl_beta": -0.08,
+    "clp": -0.75,
+    "clr_per_cl": 0.25,
+    "cn_beta": 0.06,
+    "cnp_per_cl": -0.125,
+    "cnr": -0.08,
+    "autorotation": 0.5
+  },
+  "control": {
+    "elevator": { "cm_full_up": 0.25, "cm_full_down": -0.20 },
+    "aileron": { "cl_full": 0.08, "cn_full": -0.012 },
+    "rudder": { "cn_full": 0.035, "cy_full": -0.08, "cl_full": -0.003 }
+  },
+  "devices": {
+    "airbrake": { "cd": 0.085, "dclmax": -0.27, "cm": 0.0 }
+  },
+  "engines": [],
+  "limits": {
+    "vne_kmh": 250,
+    "vne_by_altitude_kmh": [[0, 250], [1981, 237], [3048, 225], [3962, 213], [5029, 202]],
+    "rough_air_and_manoeuvre_kmh": 170,
+    "airbrake_max_kmh": 250,
+    "aerotow_max_kmh": 170,
+    "winch_max_kmh": 120,
+    "g_at_manoeuvre_speed": [5.3, -2.65],
+    "g_at_vne": [4.0, -1.5],
+    "acro_with_sb_315_66_1": "+6.5/-4 g up to 180 km/h and +5.3/-3 g up to VNE; not modelled yet"
+  },
+  "targets": [
+    { "what": "stall_kmh", "mass_kg": 580, "value": 75, "tol": 3, "src": "fm", "milestone": "M1" },
+    { "what": "stall_kmh", "mass_kg": 470, "value": 66, "tol": 3, "src": "fm", "milestone": "M1" },
+    { "what": "best_glide_ratio", "mass_kg": 580, "value": 37.0, "tol": 1.0, "src": "fm", "milestone": "M1" },
+    { "what": "best_glide_kmh", "mass_kg": 580, "value": 105, "tol": 6, "src": "fm", "milestone": "M1" },
+    { "what": "best_glide_ratio", "mass_kg": 450, "value": 36.5, "tol": 1.0, "src": "fm", "milestone": "M1" },
+    { "what": "best_glide_kmh", "mass_kg": 450, "value": 95, "tol": 6, "src": "fm", "milestone": "M1" },
+    { "what": "min_sink_ms", "mass_kg": 580, "value": 0.70, "tol": 0.05, "src": "fm", "milestone": "M1" },
+    { "what": "sink_ms_at_kmh", "speed_kmh": 85, "mass_kg": 580, "value": 0.70, "tol": 0.05, "src": "fm", "milestone": "M1" },
+    { "what": "min_sink_kmh", "mass_kg": 580, "value": 85, "check": "report", "src": "fm", "milestone": "M1",
+      "note": "the sink curve is nearly flat here; reported, not pass/fail" },
+    { "what": "min_sink_ms", "mass_kg": 450, "value": 0.64, "tol": 0.05, "src": "fm", "milestone": "M1" },
+    { "what": "sink_ms_at_kmh", "speed_kmh": 80, "mass_kg": 450, "value": 0.64, "tol": 0.05, "src": "fm", "milestone": "M1" },
+    { "what": "min_sink_kmh", "mass_kg": 450, "value": 80, "check": "report", "src": "fm", "milestone": "M1",
+      "note": "the sink curve is nearly flat here; reported, not pass/fail" },
+    { "what": "stall_kmh_airbrake_full", "mass_kg": 580, "value": 85, "tol": 4, "src": "fm", "milestone": "M1",
+      "note": "the copy of the manual read so far is unclear on this figure; verify against the original" },
+    { "what": "glide_ratio_airbrake_full_at_kmh", "speed_kmh": 95, "mass_kg": 580, "value": 7, "tol": 2, "src": "est", "milestone": "M1",
+      "note": "estimate; replace with a published figure if one is found" },
+    { "what": "spin_seconds_per_turn", "mass_kg": 580, "value": 3, "tol": 1, "src": "fm", "milestone": "M3",
+      "note": "spins only with aft CG; the manual says a slow spin with no tendency to spiral" },
+    { "what": "spin_height_loss_per_turn_m", "mass_kg": 580, "value": 60, "tol": 15, "src": "fm", "milestone": "M3" }
+  ],
+  "src": {
+    "mass": { "mass_kg": "fm", "g_max": "fm", "g_min": "fm", "radii_of_gyration_m": "est" },
+    "wing": { "area_m2": "fm", "span_m": "shape", "sweep_deg": "shape", "taper": "shape", "alpha0_deg": "est",
+              "cl_max": "fit", "cl_min": "est", "stall_softness_deg": "est", "oswald_e": "fit" },
+    "drag": { "cd0": "fit", "mach_dd": "est", "cdw_peak": "est" },
+    "stability": "est: all fields, set at M3 against handling targets",
+    "control": "est: all fields, set at M3",
+    "devices": { "airbrake": { "cd": "est", "dclmax": "fit", "cm": "est" } },
+    "limits": "fm and bga"
+  }
+}
