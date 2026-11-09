@@ -13,16 +13,18 @@ export function stallWeights(alpha, acPos, acNeg, w) {
 }
 
 /**
- * The blended lift curve (§6.1) without the rate, elevator and device terms:
- * (1 − σ) CLα (α − α0) + σ sin 2α. The loader finds its first peak; the sim adds the rest.
+ * The blended lift curve (§6.1) without the rate and elevator terms:
+ * (1 − σ) (CLα (α − α0) + ΔCL0) + σ sin 2α, with ΔCL0 the flaps' lift (§6.4). The loader finds its
+ * first peak; the sim adds the rest.
  */
-export function liftCurve(c, alpha, acPos, acNeg) {
+export function liftCurve(c, alpha, acPos, acNeg, cl0 = 0) {
   const { sigma } = stallWeights(alpha, acPos, acNeg, c.stallWidth);
-  return (1 - sigma) * c.CLa * (alpha - c.alpha0) + sigma * Math.sin(2 * alpha);
+  return (1 - sigma) * (c.CLa * (alpha - c.alpha0) + cl0) + sigma * Math.sin(2 * alpha);
 }
 
-/** Positive stall blend centre for airbrake position δb: linear between closed and open (§6.4). */
-export const alphaCPos = (c, airbrake) => (1 - airbrake) * c.alphaCPos0 + airbrake * c.alphaCPos1;
+/** Positive stall blend centre for airbrake δb and flaps δf: each device's shift, added (§6.4). */
+export const alphaCPos = (c, airbrake, flaps = 0) =>
+  c.alphaCPos0 + airbrake * (c.alphaCPos1 - c.alphaCPos0) + flaps * (c.alphaCPosF - c.alphaCPos0);
 
 const smoothstep = (x) => x * x * (3 - 2 * x);
 
@@ -44,19 +46,20 @@ export function elevatorCm(c, de) {
  */
 export function coefficients(c, air, ctl) {
   const { alpha, beta, mach, phat, qhat, rhat } = air;
-  const de = ctl.elevator, da = ctl.aileron, dr = ctl.rudder, db = ctl.airbrake;
+  const de = ctl.elevator, da = ctl.aileron, dr = ctl.rudder, db = ctl.airbrake, df = ctl.flaps ?? 0;
 
-  const { sigma } = stallWeights(alpha, alphaCPos(c, db), c.alphaCNeg, c.stallWidth);
-  const CLatt = c.CLa * (alpha - c.alpha0);
+  const { sigma } = stallWeights(alpha, alphaCPos(c, db, df), c.alphaCNeg, c.stallWidth);
+  const CLatt = c.CLa * (alpha - c.alpha0) + c.flaps.cl0 * df;
   const CLfp = Math.sin(2 * alpha);
-  const CL = (1 - sigma) * CLatt + sigma * CLfp + c.CLq * qhat + c.CLde * de; // ΔCL_devices: none yet
+  const CL = (1 - sigma) * CLatt + sigma * CLfp + c.CLq * qhat + c.CLde * de;
 
   const sinA = Math.sin(alpha);
   const CD =
     (1 - sigma) * (c.cd0 + (air.ge ?? 1) * c.K * CLatt * CLatt) +
     sigma * (c.cd0 + 2 * sinA * sinA) +
     waveDrag(c, mach) +
-    c.airbrake.cd * db;
+    c.airbrake.cd * db +
+    c.flaps.cd * df;
 
   const CY = c.CYb * beta + c.rudder.cy * dr;
 
@@ -64,7 +67,7 @@ export function coefficients(c, air, ctl) {
   const Clr = c.ClrPerCL * CL;
   const Cl = c.Clb * beta + Clp * phat + Clr * rhat + c.aileron.cl * da + c.rudder.cl * dr;
 
-  const Cm = c.Cm0 + c.Cma * (alpha - c.alpha0) + c.Cmq * qhat + elevatorCm(c, de) + c.airbrake.cm * db;
+  const Cm = c.Cm0 + c.Cma * (alpha - c.alpha0) + c.Cmq * qhat + elevatorCm(c, de) + c.airbrake.cm * db + c.flaps.cm * df;
 
   const Cnp = c.CnpPerCL * CL;
   const Cn = c.Cnb * beta + Cnp * phat + c.Cnr * rhat + c.rudder.cn * dr + c.aileron.cn * da;

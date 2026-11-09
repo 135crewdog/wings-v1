@@ -4,8 +4,11 @@
 import { readFileSync } from "node:fs";
 import { loadCard } from "../src/sim/card.js";
 import { bestGlide, glide, minSink, stallSpeed } from "../src/sim/trim.js";
+import { climbRate, levelSpeed, throttleForPower } from "../src/sim/performance.js";
 
 const KMH = 3.6;
+const MPH = 1 / 0.44704; // mph per m/s
+const FPM = 1 / 0.00508; // ft/min per m/s
 
 export function readCard(id) {
   return JSON.parse(readFileSync(new URL(`../data/aircraft/${id}.json`, import.meta.url), "utf8"));
@@ -22,6 +25,11 @@ const MEASURES = {
   min_sink_kmh: (c) => minSink(c).V * KMH,
   sink_ms_at_kmh: (c, t) => glide(c, t.speed_kmh / KMH)?.sink ?? NaN,
   glide_ratio_airbrake_full_at_kmh: (c, t) => glide(c, t.speed_kmh / KMH, { airbrake: 1 })?.LD ?? NaN,
+  stall_mph: (c) => stallSpeed(c).V * MPH,
+  stall_mph_flaps_full: (c) => stallSpeed(c, { flaps: 1 }).V * MPH,
+  max_level_mph: (c) => (levelSpeed(c) ?? NaN) * MPH,
+  climb_fpm_at_mph: (c, t) => (climbRate(c, t.speed_mph / MPH) ?? NaN) * FPM,
+  cruise_mph_at_power: (c, t) => (levelSpeed(c, { throttle: throttleForPower(t.power) }) ?? NaN) * MPH,
 };
 
 /**
@@ -48,6 +56,6 @@ export function flyTargets(json) {
 
 /** A short label for a target: what, the speed if any, and the mass. */
 export function describe(t) {
-  const speed = t.speed_kmh != null ? ` @ ${t.speed_kmh} km/h` : "";
+  const speed = t.speed_kmh != null ? ` @ ${t.speed_kmh} km/h` : t.speed_mph != null ? ` @ ${t.speed_mph} mph` : t.power != null ? ` @ ${t.power * 100}% power` : "";
   return `${t.what}${speed}, ${t.mass_kg} kg`;
 }

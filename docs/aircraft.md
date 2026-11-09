@@ -10,7 +10,7 @@ Built in this order. Each airplane adds one new piece of physics.
 | Order | Aircraft | New physics it brings | Card |
 | --- | --- | --- | --- |
 | 1 | Grob G 103 A Twin II Acro | lift, drag, energy, airbrakes, spins | `twin-ii-acro.json` |
-| 2 | Piper Super Cub | piston and prop, flaps, tailwheel ground handling | |
+| 2 | Piper Super Cub | piston and prop, flaps, tailwheel ground handling | `super-cub.json` |
 | 3 | Pitts S-2B | negative stall, inverted flight, snap rolls | |
 | 4 | Beechcraft King Air 350 | twin turboprop, engine-out, retractable gear | |
 | 5 | Canadair CL-415 | flying boat: hull and floats, water landings and takeoffs | |
@@ -132,3 +132,57 @@ sits just inside the bound.
 ### Targets
 
 The card's `targets` list is the source of truth. M1 checks the `M1` entries; M3 adds the spin.
+
+## Piper PA-18-150 Super Cub
+
+A two-seat tailwheel utility airplane with a 150 hp Lycoming O-320 and a fixed-pitch propeller. Second
+in the roster: the first engine, propeller, flaps and tailwheel.
+
+### Published data used
+
+- **FAA type certificate data sheet 1A2, revision 38 (`tcds`):** Lycoming O-320, 150 hp at 2,700 rpm.
+  VNE 153 mph, maximum structural cruise 121 mph, manoeuvring 96 mph, flaps extended 85 mph. Maximum
+  weight 1,750 lb (normal), 1,500 lb (utility). Flaps 0° and 50°. Elevator 25° up, 15° down; ailerons
+  18° each way; rudder 25° each way. CG +14.0 to +20.0 in behind the wing leading edge at 1,750 lb.
+- **PA-18 information manual (`im`):** Sensenich 74DM-56 fixed-pitch propeller, 74 in. Best
+  rate-of-climb speed 75 mph at gross weight. Approach 70 mph. Power-off stall 43 mph with full flaps
+  at gross weight, and about 4 mph higher with flaps up. Cruise about 115 mph at 75% power.
+- **Wikipedia (`wiki`):** span 35 ft 2.5 in, length 22 ft 7 in, wing area 178.5 sq ft, airfoil USA 35B
+  (modified), empty weight 930 lb, maximum speed 130 mph, climb 960 ft/min, ceiling 19,000 ft.
+- **The model (`shape`):** traced from the PA-18 three-view in `models/trace/super-cub/` (the drawing
+  itself is in `wings-reference`): the contact points, the CG's place and the propeller's.
+- Limit load factors weren't in the sources read: the normal category's +3.8 / −1.52 g, `est`.
+
+### Conflicts and doubts
+
+- The flaps-up stall (47 mph) comes from a copy of the manual that is unclear; verify it.
+- The stall speeds are indicated airspeeds. Fitted as they are, they need `cl_max` 1.74 clean and
+  2.07 with flaps, high for a USA 35B; a Cub's airspeed indicator reads low near the stall, which
+  would explain it. Kept as published until a calibrated figure turns up.
+- The manual gives 115 mph at 75% power with no altitude; it is flown at sea level.
+- The three powered targets don't pin the drag and the propeller by themselves: a free fit of zero-lift
+  drag, propeller efficiency and its falloff comes out unphysical (efficiency rising away from the
+  design speed). So `oswald_e` (0.70), `falloff` (0.5) and the design speed (115 mph) are estimates, and
+  `cd0` and `eta_max` are fitted to the maximum speed and the climb; the cruise speed is then a check.
+  The fitted peak efficiency, 0.71 before the momentum loss, is low for a metal propeller; the climb
+  figure is what asks for it. Static thrust comes out at 2,210 N (about 500 lbf).
+
+### How the starting card was found
+
+`cd0` and `eta_max` from the maximum level speed and the climb at 75 mph; `cl_max` from the flaps-up
+stall and the flaps' `dclmax` from the flaps-down stall (`fit`). Stability and control numbers start
+from typical light-airplane values (`est`); `cl_beta` −0.12 and `cnr` −0.13 were then set so the
+spiral meets its bound at the approach speed in level flight (section 12), from −0.09 and −0.10.
+
+### Targets
+
+All at gross weight, 1,750 lb (793.8 kg), sea level:
+
+| Target | Value | Tolerance | Source |
+| --- | --- | --- | --- |
+| stall, flaps 50°, power off | 43 mph | ±3 | `im` |
+| stall, flaps up, power off | 47 mph | ±3 | `im` (unclear copy) |
+| maximum level speed, full throttle | 130 mph | ±5 | `wiki` |
+| climb at 75 mph, full throttle | 960 ft/min | ±60 | `wiki`, at the `im` best-climb speed |
+| cruise at 75% power | 115 mph | ±5 | `im` |
+

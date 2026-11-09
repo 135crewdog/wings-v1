@@ -81,12 +81,12 @@ Attached lift is linear. Past the stall it blends to flat-plate lift. The blend 
 functions of α:
 
 ```
-CL_att = CLα (α − α0)
+CL_att = CLα (α − α0) + ΔCL0                    ΔCL0 from the flaps (section 6.4)
 CL_fp  = sin 2α                                  flat plate
 σ+ = 1 / (1 + exp(−(α − α_c+) / w))              positive stall
 σ− = 1 / (1 + exp( (α − α_c−) / w))              negative stall
 σ  = σ+ + σ−                                     (they never overlap meaningfully)
-CL = (1 − σ) CL_att + σ CL_fp + ΔCL_devices + CLq q̂ + CLδe δe
+CL = (1 − σ) CL_att + σ CL_fp + CLq q̂ + CLδe δe
 ```
 
 - `w` is the card's stall softness (`stall_softness_deg`, in radians here). Small `w` is a sharp break,
@@ -156,12 +156,22 @@ Each device adds its own increments, scaled by its position `0..1`:
 
 ```
 airbrake:  ΔCD = cd · δb,   ΔCLmax = dclmax · δb,   ΔCm = cm · δb
+flaps:     ΔCL0 = cl0 · δf,  ΔCD = cd · δf,   ΔCLmax = dclmax · δf,   ΔCm = cm · δf
 ```
 
-`ΔCLmax` moves the positive stall: the loader solves `α_c+` for the device closed and fully open, and
-the sim interpolates linearly between them with `δb`. No root-finding happens during flight.
+`ΔCL0` is lift added at every angle of attack on the attached side: flaps move the zero-lift angle
+down to `α0 − ΔCL0 / CLα`, so `CL_att = CLα (α − α0) + ΔCL0` and the induced drag includes it.
+`ΔCLmax` moves the positive stall: the loader solves `α_c+` for each device fully out, alone, and the
+sim adds the shifts, each in proportion to its position:
 
-Flaps, gear and speedbrakes use the same form when their airplanes arrive.
+```
+α_c+ = α_c+,0 + δb (α_c+,b − α_c+,0) + δf (α_c+,f − α_c+,0)
+```
+
+No root-finding happens during flight. The flaps' position `δf` is what the sim takes; how fast they
+run between up and down (the card's `travel_s`) is the controls' job (`docs/controls.md`), and the
+speed they may be lowered at is a limit on the card (`limits.flaps_max_*`). Gear and speedbrakes use
+the same form when their airplanes arrive.
 
 ## 7. Forces and moments
 
@@ -180,8 +190,88 @@ F_grav = m R(q)ᵀ g_w
 
 Check: with β = 0, `L̂ = (sin α, 0, −cos α)`, which points up and slightly forward. Correct.
 
-Ground contact is section 11. Thrust and water contact join with their milestones and are documented
-here first.
+Thrust is section 7.1, ground contact section 11. Water contact joins with its milestone and is
+documented here first.
+
+### 7.1 Thrust: piston engine and propeller
+
+Each engine on the card is a piston engine turning a propeller. Its thrust acts along the engine's
+`axis` (body axes, a unit vector: `(1, 0, 0)` points straight ahead) at its `pos_m` (the propeller hub,
+body axes from the CG), so a thrust line above or below the CG pitches the airplane. The throttle `τ`
+runs from 0 (idle) to 1 (full).
+
+**Power** falls with air density (Gagg and Ferrar's rule for an unsupercharged engine):
+
+```
+σ = ρ / ρ0
+P = P_rated · τ · max(0, 1.132 σ − 0.132)
+```
+
+Idle is zero power. A real idling propeller makes a little thrust or a little drag depending on speed;
+both are left out.
+
+**Thrust** comes from momentum theory for the propeller's disc, area `A = π D² / 4`. The airflow
+through the disc is accelerated from `V` (the airspeed along the axis, never below 0) to `v_s` far
+behind, and the power that does it is the shaft power times the propeller's profile efficiency `η`:
+
+```
+η P = T (V + v_s) / 2          v_s = √(V² + 2T / (ρ A))
+```
+
+`T` is solved from this each step (it rises with `P` and falls with `V`, so one root). It holds both
+limits: standing still it gives the static thrust `T_static = (2 ρ A (η P)²)^(1/3)`, and fast it tends
+to `T = η P / V`, with the momentum loss included. No separate blend is needed.
+
+`η` is a propeller's efficiency apart from that momentum loss, at its best near its design speed `V_d`
+(the card's `design_kmh` or `design_mph`). A fixed-pitch propeller loses efficiency away from it; a
+constant-speed propeller much less. One card field, `falloff`, says how much:
+
+```
+η(V) = η_max · max(0, 1 − falloff · ((V − V_d) / V_d)²)
+```
+
+So the static efficiency is `η_max (1 − falloff)`. Typical: `falloff` 0.3 for a fixed-pitch climb or
+cruise propeller, 0.05 for a constant-speed one.
+
+**Torque reaction.** The engine turns the propeller with torque `Q = P / Ω`, `Ω` the propeller's rated
+speed (`rpm`). The airframe feels `−Q` about the engine axis. The card's `rotation` says which way the
+propeller turns seen from the cockpit: `cw` (s = +1) or `ccw` (s = −1). A clockwise propeller's
+reaction rolls the airplane left.
+
+```
+M_torque = −s Q · axis
+```
+
+**P-factor.** At an angle of attack the descending blade meets the air at a higher angle than the
+rising one and pulls harder, so the thrust's centre moves off the hub. With `R = D / 2` and the card's
+`p_factor` `k`:
+
+```
+M_pfactor = s k T R (0, −β, −α)
+```
+
+A clockwise propeller at positive α yaws the nose left; in a sideslip from the right it pitches the
+nose down. Small for a Cub, strong for a Pitts.
+
+**Slipstream.** The slipstream speed `v_s` is above. The fraction of the tail in it, the card's
+`slipstream_tail` `f`, sees the dynamic pressure `q̄ + f T / A` instead of `q̄`. Only the controls on
+the tail feel the extra: the elevator and the rudder work on the ground at full power and weaken at
+idle.
+
+```
+q_extra = f T / A
+ΔM = q_extra S (b Clδr δr, c̄ Cmδe(δe), b Cnδr δr)        ΔF_y = q_extra S CYδr δr
+```
+
+This acts even below 1 m/s of airspeed (section 4), where the rest of the aerodynamics is zero. The
+tail's own stability and damping, the slipstream over the wing, the slipstream's swirl on the fin and
+the propeller's gyroscopic precession are left out for now. The swirl and the precession are most of
+a real single's swing to the left on a takeoff roll (a clockwise propeller), so until they join, the
+Cub's swing without rudder comes from the torque's roll on the gear and the main wheels' side
+friction, and can go either way.
+
+The total for each engine, in body axes: `F = T · axis`, `M = pos × F + M_torque + M_pfactor + ΔM`,
+and `ΔF_y` added to the force.
 
 ## 8. Equations of motion
 
@@ -197,7 +287,7 @@ is deterministic: the same card, initial state, inputs and seed produce the same
 
 ## 9. Trim and the performance figures
 
-All performance figures are at sea level, standard day, airbrakes closed, wings level, unless the
+All performance figures are at sea level, standard day, airbrakes closed, flaps up, wings level, unless the
 target says otherwise. At sea level, indicated, equivalent and true airspeed are the same, so the
 flight manual's indicated speeds can be compared directly.
 
@@ -213,12 +303,23 @@ flight manual's indicated speeds can be compared directly.
   at its trim value (as if trimmed with the trim lever) and everything else neutral. It must stay
   within 2 km/h and 0.5° of the trimmed state. This proves the trim and the integrator agree.
 
+- **Steady flight with power at speed V and throttle τ:** solve for α, δe and the flight-path angle
+  γ (positive climbing) such that, with ω = 0 and wings level, the sim's own total force (section 7,
+  thrust section 7.1, gravity) is zero along and across the flight path and its pitching moment is
+  zero. The rate of climb is `V sin γ`. At τ = 0 this is the glide above, with γ = −γ_glide.
+- **Rate of climb at a speed:** steady flight at full throttle at that speed. **Best rate of climb:**
+  its maximum over V, and the V where it occurs.
+- **Maximum level speed:** the highest V where steady flight at full throttle has γ = 0. **Cruise
+  speed at a power:** the same at the throttle that gives that fraction of rated power.
 - **Turns:** in a level turn at load factor `n` and speed V, the turn rate is `g √(n² − 1) / V`. The
   load factor available at V is the lift limit, `½ ρ V² S CL_peak / W`, or the card's `g_max`,
   whichever is less. The **maximum instantaneous turn rate** is the highest turn rate over V from the
   stall to VNE; it is at the **corner speed** `Vs √g_max`, where the two limits meet, or at VNE when
   the corner is above it. The **maximum sustained turn rate** is
-  the highest turn rate at which thrust equals drag; an airplane without an engine has none.
+  the highest turn rate at which thrust equals drag: at each V, the largest load factor `n` (up to
+  the lift and load limits) at which steady flight at full throttle with the weight taken as `n W`
+  still has γ ≥ 0. The turn's own pitch and yaw rates are left out. An airplane without an engine has
+  none.
 - **Energy-manoeuvrability diagram:** turn rate against speed, from the stall to VNE: the lift limit,
   the load limit (`g_max`), the sustained turn curve (with an engine) and VNE.
 
@@ -236,12 +337,12 @@ Each card is `data/aircraft/<id>.json`. Groups and fields:
 | `drag` | `cd0`, `mach_dd`, `cdw_peak` |
 | `stability` | `static_margin`, `cl_trim0`, `cmq`, `cy_beta`, `cl_beta`, `clp`, `clr_per_cl`, `cn_beta`, `cnp_per_cl`, `cnr`, `autorotation` |
 | `control` | `elevator` {cm_full_up, cm_full_down}, `aileron` {cl_full, cn_full}, `rudder` {cn_full, cy_full, cl_full} |
-| `devices` | `airbrake` {cd, dclmax, cm} (more device types later) |
-| `engines` | list; empty for a glider |
+| `devices` | `airbrake` {cd, dclmax, cm}, `flaps` {cl0, cd, dclmax, cm, travel_s, deflection_deg} (section 6.4; the deflection, fully down, is what the HUD shows); either may be left out |
+| `engines` | list; empty for a glider. Each: `type` (`piston`), `power_hp` (or `power_kw`), `rpm`, `pos_m`, `axis`, `rotation` (`cw` or `ccw` from the cockpit), `p_factor`, `slipstream_tail`, and `prop` {`diameter_in` or `diameter_m`, `eta_max`, `design_mph` or `design_kmh`, `falloff`} (section 7.1) |
 | `cg` | `from_nose_m`, `above_nose_m`: the CG's place on the airframe, from the model's origin at the nose tip |
-| `glb` | `file` (the model, `assets/models/<id>.glb`), `origin` (where the model's origin is on the airframe) |
-| `contacts` | list of contact points (section 11), each `name`, `type` (`wheel` or `skid`), `pos_m` (body axes from the CG), `k` (N/m), `c` (N·s/m), and for a wheel `brake` (true when it has one) |
-| `wheel_brake` | `when`: what puts the wheel brakes on (section 11.4): `airbrake_full` for a glider; powered airplanes add their own with the engines |
+| `glb` | `file` (the model, `assets/models/<id>.glb`), `origin` (where the model's origin is on the airframe), `liveries` (each `name` and `texture`, the skin generated beside the model; the first is the one inside the `.glb`) |
+| `contacts` | list of contact points (section 11), each `name`, `type` (`wheel` or `skid`), `pos_m` (body axes from the CG), `k` (N/m), `c` (N·s/m), and for a wheel `brake` (true when it has one) and `steer_deg` (how far it steers with full rudder, section 11.4; 0 when it doesn't) |
+| `wheel_brake` | `when`: what puts the wheel brakes on (section 11.4): `airbrake_full` (a glider) or `throttle_idle` |
 | `crash` | `wheel_sink_ms`, `skid_speed_ms`: the touchdown limits of section 11.6 |
 | `speeds` | `approach_kmh`, `cruise_kmh`: the trimmed speeds the handling figures are measured at (section 12) |
 | `limits` | `vne_kmh` or `vne_kt`, plus any other limit speeds and load factors |
@@ -313,19 +414,31 @@ sat(u) = max(−1, min(1, u))
 v_slip = 0.1 m/s
 ```
 
-**Wheels.** The wheel rolls along `e_r`, the body x axis laid flat on the ground:
-`e_r = normalize(x̂_w − (x̂_w · n) n)` with `x̂_w = R(q) (1, 0, 0)`. Across it is `e_s = n × e_r`.
+**Wheels.** The wheel rolls along `e_r`, its own heading laid flat on the ground:
+`e_r = normalize(x̂_w − (x̂_w · n) n)` with `x̂_w = R(q) (cos ψ, sin ψ, 0)`. Across it is `e_s = n × e_r`.
+`ψ` is the wheel's steering angle about the body z axis, positive toward the right: 0 for a fixed
+wheel, and `ψ = δr · steer` for a wheel that steers with the rudder (the contact's `steer_deg`). The
+linkage decides the sign: a nose wheel turns with the pedal (`steer_deg` positive), a tailwheel
+against it (`steer_deg` negative), because the tail has to swing left for the nose to go right.
 
 ```
 F_roll = −(μ_roll + b μ_brake) N sat((v_t · e_r) / v_slip) e_r
 F_side = −μ_side N sat((v_t · e_s) / v_slip) e_s
 ```
 
-`b` is 1 when the wheel has a brake and the brake is on, otherwise 0. The card's `wheel_brake.when`
-says when the brake is on. For a glider it is `airbrake_full`: the airbrake lever at the end of its
-travel, as on many two-seat gliders. Powered airplanes will name their own condition when the engines
-arrive (for example, the throttle at idle). A brake only acts through a wheel's friction, so it does
-nothing in the air.
+`b` is the brake's share, from 0 to 1, for a wheel that has a brake, and 0 for one that hasn't. The
+card's `wheel_brake.when` says when the brakes are on: `airbrake_full` (the airbrake lever at the end
+of its travel, as on many two-seat gliders) or `throttle_idle` (the throttle closed with every wheel
+on the ground: a taildragger's brakes wait for its tailwheel, as a pilot's feet wait until the tail is
+down, so closing the throttle on a wheel landing doesn't tip it onto its nose). With the brakes on, the rudder makes them differential, like toe brakes: for a wheel on the
+side `s_w` (+1 right of the centreline, −1 left, 0 on it)
+
+```
+b = clamp(1 + s_w δr, 0, 1)
+```
+
+so full right pedal brakes only the right wheel, and a wheel on the centreline always brakes fully.
+A brake only acts through a wheel's friction, so it does nothing in the air.
 
 **Skids.** A skid slides against its velocity:
 
@@ -363,6 +476,21 @@ slowed it, by up to a tenth for a firm arrival. The flight ends when:
 A wingtip settling at the end of a landing roll touches down slowly and is not a crash. After a
 crash the sim no longer steps.
 
+
+### 11.7 At rest
+
+A start on the ground begins at rest, wings level, in the attitude it would settle into: the pitch
+`θ` that puts the CG lowest with every contact point on or above the ground,
+
+```
+h(θ) = max over contact points of (−sin θ · x + cos θ · z)       (the CG's height over the ground)
+θ_rest = the θ in [−30°, 30°] where h is least
+```
+
+so a taildragger sits on its main wheels and tailwheel (the Super Cub at about 12°), and an airplane
+whose lowest points are two wheel sets sits on both. The springs then settle it in the first moments of
+the flight.
+
 ## 12. Handling
 
 How an airplane answers its controls and recovers from a disturbance. Every figure is measured from
@@ -373,7 +501,8 @@ the 6-DOF sim itself, with the same forces and equations as flight, never from a
 
 At each of the card's `speeds` (approach and cruise), sea level, airbrakes closed:
 
-1. **Trim** a steady, wings-level glide (section 9).
+1. **Trim** a steady, wings-level glide (section 9), or for an airplane with an engine, steady level
+   flight with the throttle that holds it (section 9, steady flight with power, solved for τ at γ = 0).
 2. **Linearize.** Take the eight states that govern the motion, `u, v, w` (body velocity), `p, q, r`
    and the bank and pitch angles `φ, θ`, and find how each one's rate of change responds to a small
    change in each, by central differences of the sim's own derivatives (sections 7, 8). Trimmed wings
@@ -400,7 +529,8 @@ minutes, must show the phugoid's period and damping (`tests/handling.test.js`).
 
 ### 12.2 Roll performance
 
-Flown in the 6-DOF sim at each speed, sea level, rudder neutral and no assists:
+Flown in the 6-DOF sim at each speed, sea level, from the same trim as the modes, throttle held,
+rudder neutral and no assists:
 
 - **Bank-to-bank time:** from a steady 45° turn one way, full aileron the other way; the time to reach
   45° the other way.

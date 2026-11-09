@@ -4,7 +4,7 @@
 import { loadCard } from "../sim/card.js";
 import { bestGlide, minSink, stallSpeed } from "../sim/trim.js";
 import { check, modes, rollPerformance } from "../sim/handling.js";
-import { cornerSpeed, instantaneousTurns, maxInstantaneousTurn, turnRate } from "../sim/performance.js";
+import { bestClimb, cornerSpeed, instantaneousTurns, levelSpeed, maxInstantaneousTurn, maxSustainedTurn, sustainedTurn, turnRate } from "../sim/performance.js";
 
 export const KT = 0.514444; // m/s per knot
 export const FPM = 0.00508; // m/s per foot per minute
@@ -35,7 +35,7 @@ export function figures(json) {
 
   // Speeds and the glide
   const vs = tryOr(() => stallSpeed(c));
-  const landing = hasFlaps(json) ? null : tryOr(() => stallSpeed(c, { airbrake: 1 }));
+  const landing = tryOr(() => stallSpeed(c, hasFlaps(json) ? { flaps: 1 } : { airbrake: 1 }));
   const best = tryOr(() => bestGlide(c));
   const sink = tryOr(() => minSink(c));
   const speeds = [
@@ -50,20 +50,30 @@ export function figures(json) {
       { name: "minimum sink speed", value: kt(sink?.V) },
     );
   }
-  speeds.push(
-    { name: "best rate of climb", value: hasEngine(json) ? null : "no engine" },
-    { name: "maximum level speed", value: hasEngine(json) ? null : "no engine" },
-    { name: "never-exceed speed", value: kt(c.vne) },
-  );
+  if (hasEngine(json)) {
+    const climb = tryOr(() => bestClimb(c));
+    speeds.push(
+      { name: "best rate of climb", value: climb ? `${Math.round(climb.climb / FPM)} ft/min` : null },
+      { name: "best rate of climb speed", value: kt(climb?.V) },
+      { name: "maximum level speed", value: kt(tryOr(() => levelSpeed(c))) },
+    );
+  } else {
+    speeds.push(
+      { name: "best rate of climb", value: "no engine" },
+      { name: "maximum level speed", value: "no engine" },
+    );
+  }
+  speeds.push({ name: "never-exceed speed", value: kt(c.vne) });
   out.push({ group: "Speeds", rows: speeds });
 
   // Turns
   const corner = tryOr(() => cornerSpeed(c));
   const most = tryOr(() => maxInstantaneousTurn(c));
+  const sus = hasEngine(json) ? tryOr(() => maxSustainedTurn(c)) : null;
   out.push({
     group: "Turns",
     rows: [
-      { name: "maximum sustained turn rate", value: hasEngine(json) ? null : "no engine" },
+      { name: "maximum sustained turn rate", value: !hasEngine(json) ? "no engine" : sus ? `${Math.round(sus.rate * DEG)}°/s` : null, note: sus ? `at ${kt(sus.V)}, ${sus.n.toFixed(1)} g` : undefined },
       { name: "maximum instantaneous turn rate", value: most ? `${Math.round(most.rate * DEG)}°/s` : null, note: most && !most.atCorner ? "at the never-exceed speed" : undefined },
       { name: "corner speed", value: corner ? (corner.V <= c.vne ? kt(corner.V) : `above the never-exceed speed (${kt(corner.V)})`) : null },
       { name: "limit load factors", value: `+${json.mass.g_max} g, ${json.mass.g_min} g` },
@@ -120,7 +130,10 @@ export function figures(json) {
       corner,
       turns: turns.map(({ V, rate, n }) => ({ kt: V / KT, deg: rate * DEG, n })),
       lift: lift.map(({ V, rate }) => ({ kt: V / KT, deg: rate * DEG })),
-      sustained: null, // no engine yet: the sustained turn curve comes with thrust (M3b)
+      // the sustained turn curve, with an engine: where thrust still equals drag
+      sustained: hasEngine(json)
+        ? turns.filter((_, i) => i % 4 === 0).map(({ V }) => ({ kt: V / KT, deg: sustainedTurn(c, V).rate * DEG }))
+        : null,
     };
   });
   return { name: json.name, card: c, groups: out, em };

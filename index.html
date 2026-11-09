@@ -48,7 +48,15 @@
       width: 36px; height: 36px; border: 0; border-radius: 18px; background: rgba(255, 255, 255, 0.18); color: #fff;
       font-size: 13px; font-weight: 700; letter-spacing: -1px; pointer-events: auto;
     }
-    .pause:active, .screen button:active { opacity: 0.6; }
+    .brakes .readout { position: absolute; left: 50%; top: -24px; transform: translateX(-50%); font-size: 13px; font-weight: 600;
+      font-variant-numeric: tabular-nums; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); pointer-events: none; }
+    .flaps {
+      position: absolute; right: calc(var(--right) + 14px); bottom: calc(var(--bottom) + 40px);
+      min-width: 88px; height: 40px; border: 0; border-radius: 20px; background: rgba(255, 255, 255, 0.18); color: #fff;
+      font: inherit; font-size: 14px; font-weight: 600; pointer-events: auto; font-variant-numeric: tabular-nums;
+    }
+    .flaps.down { background: rgba(40, 110, 200, 0.7); }
+    .pause:active, .flaps:active, .screen button:active { opacity: 0.6; }
     .screen button {
       font: inherit; font-size: 14px; color: var(--ink); background: var(--shade); border: 1px solid rgba(255, 255, 255, 0.35);
       border-radius: 10px; padding: 7px 11px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
@@ -69,6 +77,8 @@
     .screen .row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
     .screen .row button { font-size: 17px; padding: 12px 20px; min-width: 110px; }
     .screen button:disabled { opacity: 0.45; }
+    .screen .row.pick { gap: 8px; }
+    .screen .row.pick button { font-size: 14px; padding: 7px 13px; min-width: 0; }
     .screen small { opacity: 0.75; }
     [hidden] { display: none !important; }
     #rotate { display: none; z-index: 10; background: #2e6aa8; }
@@ -92,16 +102,19 @@
   <div id="controls" hidden>
     <div id="brakes" class="brakes" role="slider" aria-label="Speed brakes" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
       <div class="track"><div class="thumb"></div></div>
+      <div id="r-throttle" class="readout" hidden></div>
     </div>
     <button id="pause" class="pause" aria-label="Pause">II</button>
+    <button id="b-flaps" class="flaps" hidden>Flaps up</button>
   </div>
 
   <div id="menu" class="screen">
     <h1>Wings</h1>
-    <p>Grob Twin II Acro over the test grid. Hold the phone like a steering wheel: tilt the top edge
-      toward you to pull, turn it to bank. The slider on the left is the speed brakes: slide it up to
-      open them. On the ground, all the way up is the wheel brake too.</p>
+    <div class="row pick" id="pick-airplane"></div>
+    <div class="row pick" id="pick-livery"></div>
+    <p id="menu-about">Hold the phone like a steering wheel: tilt the top edge toward you to pull, turn it to bank.</p>
     <div class="row">
+      <button data-start="runway" disabled>Runway · ready to roll</button>
       <button data-start="high" disabled>High · 1,000 m</button>
       <button data-start="circuit" disabled>Circuit · 300 m</button>
       <button data-start="final" disabled>Final · 2 km out</button>

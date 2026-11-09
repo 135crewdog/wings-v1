@@ -1,0 +1,243 @@
+{
+ "name": "Cub yellow",
+ "about": "The classic factory scheme: yellow all over with the black lightning bolt and cheat line, registered N18WG (invented).",
+ "base": {
+  "fuselage": "#F2BE1A",
+  "spinner": "#F2BE1A",
+  "wing": "#F2BE1A",
+  "tail": "#F2BE1A",
+  "strut": "#F2BE1A",
+  "gear": "#F2BE1A",
+  "tire": "#1C1C1C",
+  "prop": "#3A3D40",
+  "prop_tip": "#F2EEE4",
+  "wire": "#2E3236"
+ },
+ "roughness": {
+  "default": 0.45,
+  "tire": 0.9,
+  "prop": 0.35,
+  "wire": 0.5
+ },
+ "layers": [
+  {
+   "what": "lightning bolt and cheat line",
+   "parts": [
+    "fuselage"
+   ],
+   "side_poly": [
+    [
+     3.69,
+     0.3
+    ],
+    [
+     4.37,
+     0.62
+    ],
+    [
+     6.8,
+     0.46
+    ],
+    [
+     19.7,
+     1.13
+    ],
+    [
+     20.0,
+     1.07
+    ],
+    [
+     19.7,
+     1.01
+    ],
+    [
+     6.8,
+     0.16
+    ],
+    [
+     5.19,
+     0.17
+    ],
+    [
+     5.4,
+     -0.22
+    ],
+    [
+     4.69,
+     0.12
+    ]
+   ],
+   "color": "#141414"
+  },
+  {
+   "what": "cabin glass: windshield, door and rear windows",
+   "parts": [
+    "fuselage"
+   ],
+   "side_poly": [
+    [
+     3.26,
+     0.95
+    ],
+    [
+     3.26,
+     3.2
+    ],
+    [
+     10.411,
+     3.2
+    ],
+    [
+     10.411,
+     1.966
+    ],
+    [
+     11.483,
+     1.966
+    ],
+    [
+     11.483,
+     0.67
+    ],
+    [
+     6.792,
+     0.492
+    ],
+    [
+     4.245,
+     0.67
+    ],
+    [
+     3.441,
+     0.849
+    ]
+   ],
+   "color": "#1E2A33",
+   "color2": "#4A6275",
+   "grad": {
+    "axis": "z",
+    "from": 0.4,
+    "to": 2.2
+   },
+   "roughness": 0.15
+  },
+  {
+   "what": "window post",
+   "parts": [
+    "fuselage"
+   ],
+   "box": {
+    "x": [
+     5.317,
+     5.585
+    ],
+    "z": [
+     0.3,
+     2.05
+    ]
+   },
+   "color": "#F2BE1A"
+  },
+  {
+   "what": "window post",
+   "parts": [
+    "fuselage"
+   ],
+   "box": {
+    "x": [
+     8.177,
+     8.4
+    ],
+    "z": [
+     0.3,
+     2.05
+    ]
+   },
+   "color": "#F2BE1A"
+  },
+  {
+   "what": "skylight in the wing centre section",
+   "parts": [
+    "wing"
+   ],
+   "plan_poly": [
+    [
+     5.451,
+     0.0
+    ],
+    [
+     10.277,
+     0.0
+    ],
+    [
+     10.277,
+     0.95
+    ],
+    [
+     5.451,
+     0.95
+    ]
+   ],
+   "box": {
+    "z": [
+     2.3,
+     9
+    ]
+   },
+   "color": "#1E2A33",
+   "roughness": 0.15
+  },
+  {
+   "what": "cooling inlets in the nose bowl",
+   "parts": [
+    "fuselage"
+   ],
+   "box": {
+    "x": [
+     0.85,
+     1.2
+    ],
+    "y": [
+     0.28,
+     0.78
+    ],
+    "z": [
+     0.05,
+     0.55
+    ]
+   },
+   "color": "#1A1A1A",
+   "roughness": 0.8
+  },
+  {
+   "what": "gap in the cheat line for the registration",
+   "parts": [
+    "fuselage"
+   ],
+   "box": {
+    "x": [
+     12.25,
+     17.75
+    ],
+    "z": [
+     0.35,
+     1.25
+    ]
+   },
+   "color": "#F2BE1A"
+  },
+  {
+   "what": "registration",
+   "parts": [
+    "fuselage"
+   ],
+   "text": "N18WG",
+   "at": [
+    15.0,
+    0.79
+   ],
+   "height": 0.95,
+   "color": "#141414"
+  }
+ ]
+}

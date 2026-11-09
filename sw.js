@@ -2,7 +2,7 @@
 // The cache name carries APP_VERSION (src/version.js); tests/smoke.test.js checks they match.
 // A new version installs, takes over at once and deletes every older Wings cache.
 
-const VERSION = "0.1.2";
+const VERSION = "0.1.3";
 const CACHE = `wings-${VERSION}`;
 
 const FILES = [
@@ -36,6 +36,7 @@ const FILES = [
   "src/sim/handling.js",
   "src/sim/performance.js",
   "src/sim/sim.js",
+  "src/sim/thrust.js",
   "src/sim/trim.js",
   "src/sim/vec.js",
   "src/ui/figures.js",
@@ -43,11 +44,17 @@ const FILES = [
   "src/ui/readouts.js",
   "src/version.js",
   "src/world/ground.js",
+  "data/aircraft/super-cub.json",
   "data/aircraft/twin-ii-acro.json",
   "data/places/test-grid.json",
   "data/roster.json",
   "data/surfaces.json",
+  "assets/models/super-cub.glb",
+  "assets/models/super-cub_bush-red.png",
+  "assets/models/super-cub_cub-yellow.png",
   "assets/models/twin-ii-acro.glb",
+  "assets/models/twin-ii-acro_cadet-red.png",
+  "assets/models/twin-ii-acro_club-white.png",
   "vendor/three/three.module.js",
   "vendor/three/three.core.js",
   "vendor/three/addons/loaders/GLTFLoader.js",

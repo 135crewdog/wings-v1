@@ -30,6 +30,10 @@ Textures (UVs and skins)
     text              "WG-103" with "at": [x, z] and "height": ft, read correctly on each side
     color, color2 + grad {"axis": "z", "from", "to"} for a gradient, roughness
 
+Fuselage stations: {"x", "w", "h", "z", "n"} plus optional "lean": the sides lean in
+  toward the top, so the width at the top of the section is w * (1 - lean); w stays the
+  width at the bottom. 0 (the default) is the plain superellipse.
+
 Moving parts (optional shape keys, all backward compatible):
   surface["split"]      cuts a lifting surface at a hinge line over chosen spans.
       "hinge_x":     [[s, x], ...]  hinge at an absolute airframe x (ft), or
@@ -37,22 +41,30 @@ Moving parts (optional shape keys, all backward compatible):
       "spans": [{"s0", "s1", "control": {...}}   aft part becomes a moving part
                 {"s0", "s1", "none": true}        no aft part (e.g. fin above the rudder)
                 {"s0", "s1", "part": "wing"}]     aft part stays fixed, labelled as given
+                {"s0", "s1", "whole": "rudder"}   the whole section belongs to that moving
+                                                  part (a horn balance ahead of the hinge);
+                                                  its hinge comes from the part's control span
       A "control" holds: name ("{side}" becomes l/r on mirrored surfaces; the same
       name on both sides makes one part, e.g. a one-piece elevator), min_deg,
       max_deg, positive (what a positive angle does) and optional source.
   surface["airbrakes"]  [{"name", "s0", "s1", "frac", "height", "travel",
                           "gap", "cap_width"}] blade airbrakes in the upper surface.
   surface["incidence_deg"]  wing incidence, nose up, about the leading edge.
+  surface["points"]     airfoil points per side (default 10); thin tail surfaces need fewer.
+  prop["node"]          true puts the blades in their own "prop" node that spins about
+                        the thrust line (the spinner stays on the airframe).
   fuselage["paint"]     [{"part", "x0", "x1", "z0", "z1"}] part labels by band (older
                         shapes; skins usually paint these instead).
 
 Each moving part is exported as its own child node of the airframe, with its
-origin on the hinge line (airbrakes: on the closed cap) and no rest rotation.
-The node's glTF extras say how to drive it, in glTF axes (metres, Y up):
+origin on the hinge line (airbrakes: on the closed cap; prop: on the hub) and no
+rest rotation. The node's glTF extras say how to drive it, in glTF axes (metres, Y up):
   {"kind": "hinge", "axis": [x, y, z], "min_deg", "max_deg", "positive"}
       three.js: node.quaternion.setFromAxisAngle(new Vector3(...axis), deg * PI / 180)
   {"kind": "slide", "axis": [x, y, z], "travel_m"}
       three.js: node.position.copy(rest).addScaledVector(new Vector3(...axis), t * travel_m)
+  {"kind": "spin", "axis": [x, y, z], "positive"}
+      three.js: node.quaternion.setFromAxisAngle(new Vector3(...axis), angle)
 All parts share one material, so a skin swap is one line in three.js:
   material.map = texture (flipY = false, colorSpace = SRGBColorSpace)
 """
@@ -327,12 +339,13 @@ class Builder:
                 vs.append(None)
                 continue
             e = 2.0 / st["n"]
+            lean = st.get("lean", 0.0)
             ring = []
             for f, sd in zip(fr, side):
                 # superellipse: z = h/2 sgn(s)|s|^e, y = w/2 |c|^e with s = sin(theta)
                 sa = math.copysign(abs(f) ** (1.0 / e), f) if abs(f) < 1 else math.copysign(1.0, f)
                 ca = math.sqrt(max(0.0, 1 - sa * sa))
-                y = -sd * st["w"] / 2 * ca ** e
+                y = -sd * st["w"] / 2 * ca ** e * (1.0 - lean * (1.0 + f) / 2.0)
                 z = st["z"] + st["h"] / 2 * f
                 ring.append(self.vert((st["x"], y, z)))
             rings.append(ring)
@@ -438,6 +451,7 @@ class Builder:
         spans = split.get("spans", [])
         sides = [1, -1] if sf.get("mirror") else [1]
         plane = (0, 1) if vertical else (0, 2)
+        npts = sf.get("points", 10)
 
         def section_at(s):
             for a, b in zip(secs, secs[1:]):
@@ -503,7 +517,7 @@ class Builder:
 
         front_paint = lambda sm: secs[seg_index(sm)].get("part", sf["part"])
         aft_paint = lambda sm: secs[seg_index(sm)].get("aft_part", secs[seg_index(sm)].get("part", sf["part"]))
-        full = self.airfoil(t_af, m_af)
+        full = self.airfoil(t_af, m_af, npts)
 
         for side in sides:
             for sp, ss in groups:
@@ -511,7 +525,11 @@ class Builder:
                 if sp is None:
                     tube(ss, lambda s: full, front_paint, side)
                     continue
-                tube(ss, lambda s: self.airfoil_front(t_af, m_af, hinge_frac(s)), front_paint, side)
+                if sp.get("whole"):              # e.g. a rudder's horn balance above the fin
+                    self.t = self.target(sp["whole"].replace("{side}", "l" if side == 1 else "r"))
+                    tube(ss, lambda s: full, aft_paint, side)
+                    continue
+                tube(ss, lambda s: self.airfoil_front(t_af, m_af, hinge_frac(s), npts), front_paint, side)
                 if sp.get("none"):
                     continue
                 ctl = sp.get("control")
@@ -600,11 +618,12 @@ class Builder:
 
     def struts(self):
         for st in self.shape.get("struts", []):
-            self.tube(st["a"], st["b"], st["r"], st["part"])
+            sides = st.get("sides", 6)
+            self.tube(st["a"], st["b"], st["r"], st["part"], sides)
             if st.get("mirror"):
                 a = [st["a"][0], -st["a"][1], st["a"][2]]
                 b = [st["b"][0], -st["b"][1], st["b"][2]]
-                self.tube(a, b, st["r"], st["part"])
+                self.tube(a, b, st["r"], st["part"], sides)
 
     def wheel(self, x, y, z, r, w, sides=14):
         hub = r * 0.45
@@ -632,6 +651,13 @@ class Builder:
         p = self.shape.get("prop")
         if not p:
             return
+        if p.get("node"):
+            self.t = self.target("prop")
+            self.t.meta = {"kind": "spin", "positive": p.get("positive", "")}
+            if p.get("source"):
+                self.t.meta["source"] = p["source"]
+            self.t.spin_dir = Vector((-1.0, 0.0, 0.0))      # thrust line, toward the nose
+            self.t.origin = to_blender((p["x"], 0.0, p["z"]))
         R, ch = p["diameter"] / 2, p["chord"]
         hub = 0.35
         for i in range(p["blades"]):
@@ -653,9 +679,11 @@ class Builder:
             for j in range(len(rows) - 1):
                 for k in range(4):
                     k1 = (k + 1) % 4
-                    self.face([rows[j][k], rows[j][k1], rows[j + 1][k1], rows[j + 1][k]], "prop")
-            self.face(rows[-1], "prop")
+                    part = "prop_tip" if (j == len(rows) - 2 and p.get("tip_part")) else "prop"
+                    self.face([rows[j][k], rows[j][k1], rows[j + 1][k1], rows[j + 1][k]], part)
+            self.face(rows[-1], "prop_tip" if p.get("tip_part") else "prop")
             self.face(list(reversed(rows[0])), "prop")
+        self.t = self.main
 
     # ---- UV atlas ----
     def pack(self, S, pad=6, swatch=8):
@@ -967,6 +995,10 @@ class Builder:
                 if (not tg.meta["vertical"] and axis.x < 0) or (tg.meta["vertical"] and axis.z > 0):
                     axis = -axis
                 origin = (a + b) / 2
+            elif tg.meta.get("kind") == "spin":
+                axis = (Matrix.Scale(FT, 4) @ TO_BLENDER).to_3x3() @ tg.spin_dir
+                axis.normalize()
+                origin = tg.origin
             else:
                 axis = (Matrix.Scale(FT, 4) @ TO_BLENDER).to_3x3() @ tg.slide_dir
                 axis.normalize()

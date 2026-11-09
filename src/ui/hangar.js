@@ -23,6 +23,10 @@ const TUNABLE = [
   ["control.elevator.cm_full_up", "elevator, full back (Cm)"],
   ["control.aileron.cl_full", "aileron, full (Cl)"],
   ["control.rudder.cn_full", "rudder, full (Cn)"],
+  ["devices.flaps.dclmax", "flaps, added maximum lift"],
+  ["engines.0.power_hp", "engine power (hp)"],
+  ["engines.0.prop.eta_max", "propeller efficiency, peak"],
+  ["engines.0.prop.falloff", "propeller efficiency falloff"],
 ];
 
 const get = (o, path) => path.split(".").reduce((x, k) => x?.[k], o);
@@ -99,6 +103,12 @@ function emDiagram(em) {
   line(em.lift.filter((p) => p.kt >= em.corner.V / 0.514444 && p.deg <= yTop), { stroke: "rgba(108,180,255,0.35)", "stroke-dasharray": "4 4", "stroke-width": 1.5 });
   // the envelope: the lift limit up to the corner, the load limit (g_max) beyond it
   line(em.turns, { stroke: "#6cb4ff", "stroke-width": 2.5 });
+  // the sustained turns, with an engine
+  if (em.sustained) {
+    line(em.sustained, { stroke: "#7ee08f", "stroke-width": 2 });
+    const top = em.sustained.reduce((a, p) => (p.deg > a.deg ? p : a));
+    text(x(top.kt), y(top.deg) + 16, "sustained", { "text-anchor": "middle", fill: "#7ee08f" });
+  }
   // VNE
   const vneKt = em.vne / 0.514444;
   s.append(svgEl("line", { x1: x(vneKt), x2: x(vneKt), y1: y(0), y2: y(yTop), stroke: "#ffb35c", "stroke-width": 1.5 }));
@@ -158,7 +168,9 @@ function airplane(original) {
       return;
     }
     plan.replaceChildren(planform(j));
-    em.replaceChildren(emDiagram(f.em), el("div", { class: "note" }, f.em?.sustained ? "" : "Lift limit up to the corner, load limit beyond it. No sustained turn curve: no engine."));
+    em.replaceChildren(emDiagram(f.em), el("div", { class: "note" }, f.em?.sustained
+      ? "Lift limit up to the corner, load limit beyond it; in green, the turns full power can sustain."
+      : "Lift limit up to the corner, load limit beyond it. No sustained turn curve: no engine."));
     right.replaceChildren(table(f.groups));
   }
 

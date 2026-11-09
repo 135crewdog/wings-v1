@@ -1,12 +1,14 @@
-// Wings, M2: first flight. The composition root: loads the card and the place, runs the sim at a
-// fixed 1/120 s from an accumulator, and draws an interpolated frame. No physics here: the sim is
-// src/sim/, the ground src/world/, the frames src/render/frames.js.
+// Wings. The composition root: loads the roster's cards and the place, runs the sim at a fixed
+// 1/120 s from an accumulator, and draws an interpolated frame. No physics here: the sim is src/sim/,
+// the ground src/world/, the frames src/render/frames.js.
 
 import * as THREE from "three";
 import { APP_VERSION } from "./version.js";
 import { loadCard } from "./sim/card.js";
 import { DT, Sim } from "./sim/sim.js";
-import { glide, glideState } from "./sim/trim.js";
+import { glideState, handlingTrim } from "./sim/trim.js";
+import { restingAttitude } from "./sim/contact.js";
+import { qfromEuler } from "./sim/vec.js";
 import { makeGround, startPose } from "./world/ground.js";
 import { nedToThree } from "./render/frames.js";
 import { createWorld } from "./render/world.js";
@@ -21,10 +23,10 @@ const $ = (id) => document.getElementById(id);
 const getJSON = (path) => fetch(path).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${path}: ${r.status}`))));
 
 // ---- settings, kept per device ----
-const settings = { hud: true, debug: false, assists: { rudder: true, trim: true, level: true } };
+const settings = { hud: true, debug: false, assists: { rudder: true, trim: true, level: true }, airplane: null, livery: {} };
 try {
   const saved = JSON.parse(localStorage.getItem("wings.settings") || "{}");
-  Object.assign(settings, saved, { assists: { ...settings.assists, ...(saved.assists ?? {}) } });
+  Object.assign(settings, saved, { assists: { ...settings.assists, ...(saved.assists ?? {}) }, livery: { ...(saved.livery ?? {}) } });
 } catch {}
 const saveSettings = () => { try { localStorage.setItem("wings.settings", JSON.stringify(settings)); } catch {} };
 
@@ -52,6 +54,8 @@ $("version").textContent = `Wings ${APP_VERSION}`;
 
 // ---- flight state ----
 let card, place, ground, world, aircraft;
+const cards = new Map(); // id → card JSON, in roster order
+const models = new Map(); // id → loaded model (aircraft.js)
 let sim = null, prev = null, startId = "high", assists = null;
 let mode = "menu"; // menu | flying | paused | crashed
 let ready = false; // the card, the place and the model have all loaded
@@ -62,6 +66,7 @@ const controls = createControls({
   onFlip: () => pause("Turned around"),
   onNeutral: recentered,
 });
+const powered = () => card.engines.length > 0;
 
 // As in rage: when the tilt takes a new centre, the Recenter button and the screen say so.
 let recenterTimer = null;
@@ -78,14 +83,30 @@ function recentered() {
 }
 
 function start(id) {
+  if (id === "runway" && !powered()) id = "high"; // a glider has no runway start of its own
   startId = id;
   const pose = startPose(place, id);
-  const trim = glide(card, pose.speed, { altitude: pose.altitude });
-  assists = createAssists(card, trim.elevator); // the trim starts where the start's glide needs it
-  sim = new Sim(card, glideState(trim, pose.altitude, { heading: pose.heading, north: pose.north, east: pose.east }), { ground });
+  controls.reset();
+  if (pose.onGround) {
+    // at rest on its wheels (flight-model 11.7), throttle at idle; the trim set for the climb-out
+    const rest = restingAttitude(card);
+    const trim = handlingTrim(card, (card.json.speeds?.approach_kmh ?? 100) / 3.6);
+    assists = createAssists(card, trim?.elevator ?? 0);
+    sim = new Sim(card, {
+      x: [pose.north, pose.east, -(pose.altitude + rest.height + 0.005)],
+      v: [0, 0, 0],
+      q: qfromEuler(0, rest.pitch, pose.heading),
+      omega: [0, 0, 0],
+    }, { ground });
+  } else {
+    // a glide, or with an engine level flight with the throttle that holds it
+    const trim = handlingTrim(card, pose.speed, { altitude: pose.altitude });
+    assists = createAssists(card, trim.elevator); // the trim starts where the start's flight needs it
+    sim = new Sim(card, glideState(trim, pose.altitude, { heading: pose.heading, north: pose.north, east: pose.east }), { ground });
+    if (powered()) controls.setLever(trim.throttle);
+  }
   prev = sim.state;
   acc = 0;
-  controls.setAirbrake(0);
   chase.reset();
   mode = "flying";
   show();
@@ -115,6 +136,12 @@ function show() {
   $("b-hud").classList.toggle("on", settings.hud);
   $("b-debug").classList.toggle("on", settings.debug);
   for (const k of ["rudder", "trim", "level"]) $(`b-auto-${k}`).classList.toggle("on", settings.assists[k]);
+  if (card) {
+    $("b-flaps").hidden = !flying || !card.flaps.present;
+    $("r-throttle").hidden = !flying || !powered();
+    $("brakes").setAttribute("aria-label", powered() ? "Throttle" : "Speed brakes");
+    for (const b of document.querySelectorAll("[data-start]")) b.hidden = b.dataset.start === "runway" && !powered();
+  }
 }
 
 // ---- buttons ----
@@ -128,6 +155,7 @@ for (const b of document.querySelectorAll("[data-start]")) {
   });
 }
 $("pause").addEventListener("click", () => pause());
+$("b-flaps").addEventListener("click", () => controls.toggleFlaps());
 $("b-restart").addEventListener("click", () => ready && start(startId));
 $("b-recenter").addEventListener("click", () => controls.tilt.calibrate());
 $("b-hud").addEventListener("click", () => { settings.hud = !settings.hud; saveSettings(); show(); });
@@ -144,13 +172,13 @@ $("message-go").addEventListener("click", () => {
 });
 $("message-menu").addEventListener("click", () => { mode = "menu"; show(); });
 
-// The speed brake slider (docs/controls.md): a smooth slide, bottom closed, top fully open; it keeps
-// its place when let go. On the ground, fully open also works the wheel brake (the card says so).
+// The lever (docs/controls.md): the speed brakes on a glider, the throttle with an engine. A smooth
+// slide that keeps its place when let go. The card says when the wheel brakes are on.
 const brakeEl = $("brakes"), brakeTrack = brakeEl.querySelector(".track");
 let brakeFinger = null;
 function slide(e) {
   const r = brakeTrack.getBoundingClientRect();
-  controls.setAirbrake(1 - (e.clientY - r.top) / r.height);
+  controls.setLever(1 - (e.clientY - r.top) / r.height);
 }
 brakeEl.addEventListener("pointerdown", (e) => {
   if (brakeFinger !== null) return;
@@ -217,6 +245,7 @@ function frame(now) {
   const q = [quat.w, quat.x, quat.y, quat.z];
   aircraft.setPose(x, q);
   aircraft.setControls(flown);
+  aircraft.spin(mode === "flying" ? dt : 0, powered() ? flown.throttle : 0);
 
   pos.fromArray(nedToThree(x));
   chase.update(pos, aircraft.object.quaternion, dt, place.ground.height_m);
@@ -229,8 +258,15 @@ function frame(now) {
     $("r-altitude").textContent = f.altitude;
     $("r-vs").textContent = f.vs;
   }
-  brakeEl.querySelector(".thumb").style.top = `${(1 - ctl.airbrake) * 100}%`;
-  brakeEl.setAttribute("aria-valuenow", String(Math.round(ctl.airbrake * 100)));
+  brakeEl.querySelector(".thumb").style.top = `${(1 - controls.lever) * 100}%`;
+  brakeEl.setAttribute("aria-valuenow", String(Math.round(controls.lever * 100)));
+  if (powered()) $("r-throttle").textContent = String(Math.round(ctl.throttle * 100));
+  if (card.flaps.present) {
+    const deg = Math.round(ctl.flaps * card.flaps.deflection);
+    const fb = $("b-flaps");
+    fb.textContent = deg === 0 ? "Flaps up" : `Flaps ${deg}°`;
+    fb.classList.toggle("down", controls.flapsSelected > 0);
+  }
   if (settings.debug) {
     const info = renderer.info.render;
     const sh = shadow.visible ? `shadow ${shadow.w.toFixed(2)} m edge, ${shadow.radius.toFixed(1)} px` : "shadow off";
@@ -239,19 +275,80 @@ function frame(now) {
 }
 
 // ---- load ----
-Promise.all([getJSON("data/aircraft/twin-ii-acro.json"), getJSON("data/places/test-grid.json"), getJSON("data/surfaces.json")])
-  .then(async ([cardJson, placeJson, surfaces]) => {
-    card = loadCard(cardJson);
+/** Fly this airplane: its card, its model (loaded once) and its livery; the menu's still view. */
+async function choose(id) {
+  // No start while the airplane changes: the new card, model, livery and controls go in together.
+  const wasReady = ready;
+  ready = false;
+  enableStarts(false);
+  try {
+    const next = loadCard(cards.get(id));
+    if (!models.has(id)) models.set(id, await loadAircraft(next.glb, next.cg));
+    const model = models.get(id);
+    const list = next.json.glb.liveries ?? [];
+    const i = settings.livery[id] ?? 0;
+    await model.setLivery(i > 0 ? list[i]?.texture ?? null : null);
+    if (aircraft) world.scene.remove(aircraft.object);
+    card = next;
+    aircraft = model;
+    world.scene.add(aircraft.object);
+    settings.airplane = id;
+    saveSettings();
+    controls.configure({ lever: powered() ? "throttle" : "airbrake", flapTravel: card.flaps.present ? card.flaps.travel : null });
+    // a still view of the field behind the menu
+    sim = new Sim(card, glideState(handlingTrim(card, 95 / 3.6, { altitude: 60 }), 60, { north: -900 }), { ground });
+    prev = sim.state;
+    pickers();
+    show();
+  } finally {
+    if (wasReady) {
+      ready = true;
+      enableStarts(true);
+    }
+  }
+}
+
+function enableStarts(on) {
+  for (const b of document.querySelectorAll("[data-start]")) b.disabled = !on;
+}
+
+async function livery(i) {
+  const list = card.json.glb.liveries ?? [];
+  settings.livery[card.id] = i;
+  saveSettings();
+  await aircraft.setLivery(i > 0 ? list[i]?.texture ?? null : null);
+  pickers();
+}
+
+/** The menu's airplane and livery buttons, the chosen ones lit. */
+function pickers() {
+  const row = (el, items, on, pick) => {
+    el.replaceChildren(...items.map((name, i) => {
+      const b = document.createElement("button");
+      b.textContent = name;
+      b.classList.toggle("on", i === on);
+      b.addEventListener("click", () => pick(i));
+      return b;
+    }));
+  };
+  const ids = [...cards.keys()];
+  row($("pick-airplane"), ids.map((id) => cards.get(id).name), ids.indexOf(card.id), (i) => ready && mode === "menu" && choose(ids[i]));
+  const list = card.json.glb.liveries ?? [];
+  row($("pick-livery"), list.map((l) => l.name), settings.livery[card.id] ?? 0, (i) => livery(i));
+  $("menu-about").textContent = powered()
+    ? "Hold the phone like a steering wheel: tilt the top edge toward you to pull, turn it to bank, and on the ground to steer. The slider on the left is the throttle; at idle, once the tailwheel is down, the wheel brakes are on."
+    : "Hold the phone like a steering wheel: tilt the top edge toward you to pull, turn it to bank. The slider on the left is the speed brakes; on the ground, all the way up is the wheel brake too.";
+}
+
+Promise.all([getJSON("data/roster.json"), getJSON("data/places/test-grid.json"), getJSON("data/surfaces.json")])
+  .then(async ([roster, placeJson, surfaces]) => {
+    for (const id of roster.aircraft) cards.set(id, await getJSON(`data/aircraft/${id}.json`));
     place = placeJson;
     ground = makeGround(place, surfaces);
     world = createWorld(renderer, place);
-    aircraft = await loadAircraft(card.glb, card.cg);
-    world.scene.add(aircraft.object);
-    // a still view of the field behind the menu
-    sim = new Sim(card, glideState(glide(card, 95 / 3.6, { altitude: 60 }), 60, { north: -900 }), { ground });
-    prev = sim.state;
+    await choose(cards.has(settings.airplane) ? settings.airplane : roster.aircraft[0]);
     ready = true; // only now may a start begin: nothing after this replaces the flight
-    for (const b of document.querySelectorAll("[data-start]")) b.disabled = false;
+    enableStarts(true);
     $("menu-status").textContent = "Choose a start. The first tap asks for motion access.";
     renderer.setAnimationLoop(frame);
   })
