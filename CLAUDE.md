@@ -67,6 +67,7 @@ combat, no scores.
 ```
 CLAUDE.md
 docs/          flight-model.md (the equations; the authority)  aircraft.md (roster, cards, targets)
+               milestones.md (M0 to M9: what each builds and when it's done)
 src/           app.js  sim/  world/  render/  input/  ui/
 data/          aircraft/<id>.json  places/<id>.json
 models/        gen_aircraft.py  shapes/<id>.json  skins/<id>/<name>.json  parts/
