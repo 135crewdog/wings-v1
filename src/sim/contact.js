@@ -100,3 +100,25 @@ export function crashCheck(card, before, after, ground, wasTouching) {
   }
   return null;
 }
+
+/**
+ * The attitude at rest (§11.7): the pitch θ (rad) that puts the CG lowest with every contact point on
+ * or above the ground, wings level, and the CG's height over the ground there (m).
+ */
+export function restingAttitude(card) {
+  const h = (th) => Math.max(...card.contacts.map((p) => -Math.sin(th) * p.r[0] + Math.cos(th) * p.r[2]));
+  let best = { pitch: 0, height: h(0) };
+  for (let d = -30; d <= 30; d += 0.05) {
+    const th = (d * Math.PI) / 180, v = h(th);
+    if (v < best.height) best = { pitch: th, height: v };
+  }
+  // refine by golden section around the coarse best
+  let a = best.pitch - 0.001, b = best.pitch + 0.001;
+  const r = (Math.sqrt(5) - 1) / 2;
+  for (let i = 0; i < 60; i++) {
+    const x1 = b - r * (b - a), x2 = a + r * (b - a);
+    if (h(x1) < h(x2)) b = x2; else a = x1;
+  }
+  const pitch = (a + b) / 2;
+  return { pitch, height: h(pitch) };
+}

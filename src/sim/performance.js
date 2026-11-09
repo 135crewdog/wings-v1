@@ -97,3 +97,31 @@ export function throttleForPower(fraction, { altitude = 0 } = {}) {
   const sigma = atmosphere(altitude).rho / atmosphere(0).rho;
   return fraction / Math.max(1e-9, 1.132 * sigma - 0.132);
 }
+
+/**
+ * The sustained turn at speed V (§9): the largest load factor, up to the lift and load limits, at
+ * which steady flight at full throttle with weight n W still holds γ ≥ 0, and its turn rate (rad/s).
+ * { n, rate }; n = 1 and rate 0 where even level flight can't be held.
+ */
+export function sustainedTurn(card, V, { altitude = 0 } = {}) {
+  const ok = (n) => (steady(card, V, { altitude, n })?.gamma ?? -1) >= 0;
+  if (card.engines.length === 0 || !ok(1)) return { n: 1, rate: 0 };
+  let lo = 1, hi = loadFactorAvailable(card, V, { altitude });
+  if (ok(hi)) return { n: hi, rate: turnRate(hi, V) };
+  for (let i = 0; i < 40; i++) {
+    const m = (lo + hi) / 2;
+    if (ok(m)) lo = m; else hi = m;
+  }
+  return { n: lo, rate: turnRate(lo, V) };
+}
+
+/** The maximum sustained turn rate (§9) over the stall to VNE: { V, n, rate }. */
+export function maxSustainedTurn(card, { altitude = 0, step = 1 } = {}) {
+  const vs = stallSpeed(card, { altitude }).V;
+  let best = { V: NaN, n: 1, rate: 0 };
+  for (let V = vs * 1.02; V <= card.vne; V += step) {
+    const s = sustainedTurn(card, V, { altitude });
+    if (s.rate > best.rate) best = { V, ...s };
+  }
+  return best;
+}

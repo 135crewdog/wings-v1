@@ -48,7 +48,7 @@ export function makeGround(place, surfaces) {
 }
 
 /**
- * A start position from the place record: { north, east, altitude, heading (rad), speed (m/s) }.
+ * A start position from the place record: { north, east, altitude, heading (rad), speed (m/s), onGround }.
  * along_m and across_m are from the runway's centre, along its heading and to its right.
  */
 export function startPose(place, id) {
@@ -62,5 +62,6 @@ export function startPose(place, id) {
     altitude: place.ground.height_m + s.height_m,
     heading: s.heading_deg * DEG,
     speed: s.speed_kmh / 3.6,
+    onGround: s.on_ground === true,
   };
 }

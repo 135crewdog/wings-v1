@@ -197,7 +197,7 @@ export function loadCard(json, { mass_kg } = {}) {
     rudder: { cn: ctl.rudder.cn_full, cy: ctl.rudder.cy_full, cl: ctl.rudder.cl_full },
     // devices (§6.4)
     airbrake: { cd: brake.cd, dclmax: brake.dclmax, cm: brake.cm },
-    flaps: { cl0: flaps.cl0, cd: flaps.cd, dclmax: flaps.dclmax, cm: flaps.cm, travel: flaps.travel_s, present: json.devices?.flaps != null },
+    flaps: { cl0: flaps.cl0, cd: flaps.cd, dclmax: flaps.dclmax, cm: flaps.cm, travel: flaps.travel_s, deflection: flaps.deflection_deg ?? 0, present: json.devices?.flaps != null },
     // engines (§7.1)
     engines: (json.engines ?? []).map(engineSI),
     // the airframe: where the CG is on the model, the model file, and the ground contact (§11)

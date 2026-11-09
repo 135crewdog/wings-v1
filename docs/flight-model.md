@@ -337,7 +337,7 @@ Each card is `data/aircraft/<id>.json`. Groups and fields:
 | `drag` | `cd0`, `mach_dd`, `cdw_peak` |
 | `stability` | `static_margin`, `cl_trim0`, `cmq`, `cy_beta`, `cl_beta`, `clp`, `clr_per_cl`, `cn_beta`, `cnp_per_cl`, `cnr`, `autorotation` |
 | `control` | `elevator` {cm_full_up, cm_full_down}, `aileron` {cl_full, cn_full}, `rudder` {cn_full, cy_full, cl_full} |
-| `devices` | `airbrake` {cd, dclmax, cm}, `flaps` {cl0, cd, dclmax, cm, travel_s} (section 6.4); either may be left out |
+| `devices` | `airbrake` {cd, dclmax, cm}, `flaps` {cl0, cd, dclmax, cm, travel_s, deflection_deg} (section 6.4; the deflection, fully down, is what the HUD shows); either may be left out |
 | `engines` | list; empty for a glider. Each: `type` (`piston`), `power_hp` (or `power_kw`), `rpm`, `pos_m`, `axis`, `rotation` (`cw` or `ccw` from the cockpit), `p_factor`, `slipstream_tail`, and `prop` {`diameter_in` or `diameter_m`, `eta_max`, `design_mph` or `design_kmh`, `falloff`} (section 7.1) |
 | `cg` | `from_nose_m`, `above_nose_m`: the CG's place on the airframe, from the model's origin at the nose tip |
 | `glb` | `file` (the model, `assets/models/<id>.glb`), `origin` (where the model's origin is on the airframe), `liveries` (each `name` and `texture`, the skin generated beside the model; the first is the one inside the `.glb`) |
@@ -474,6 +474,21 @@ slowed it, by up to a tenth for a firm arrival. The flight ends when:
 
 A wingtip settling at the end of a landing roll touches down slowly and is not a crash. After a
 crash the sim no longer steps.
+
+
+### 11.7 At rest
+
+A start on the ground begins at rest, wings level, in the attitude it would settle into: the pitch
+`θ` that puts the CG lowest with every contact point on or above the ground,
+
+```
+h(θ) = max over contact points of (−sin θ · x + cos θ · z)       (the CG's height over the ground)
+θ_rest = the θ in [−30°, 30°] where h is least
+```
+
+so a taildragger sits on its main wheels and tailwheel (the Super Cub at about 12°), and an airplane
+whose lowest points are two wheel sets sits on both. The springs then settle it in the first moments of
+the flight.
 
 ## 12. Handling
 

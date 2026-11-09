@@ -73,7 +73,8 @@
    "cd": 0.02,
    "dclmax": 0.338,
    "cm": -0.04,
-   "travel_s": 2.0
+   "travel_s": 2.0,
+   "deflection_deg": 50
   }
  },
  "engines": [
@@ -305,7 +306,8 @@
     "cd": "est",
     "dclmax": "fit",
     "cm": "est",
-    "travel_s": "est"
+    "travel_s": "est",
+    "deflection_deg": "tcds"
    }
   },
   "engines": {

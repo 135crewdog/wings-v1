@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.3
+
+- A second airplane: the Piper Super Cub, with a 150 hp engine, a propeller and flaps. Pick it on the
+  menu, with its livery (Cub yellow or Bush red); the glider has two liveries too.
+- A runway start for airplanes with an engine: at rest on the runway, ready to roll. The slider on the
+  left is the throttle, with its percentage above it; at idle the wheel brakes are on. The flaps button
+  on the right lowers the flaps to 50° and raises them again (F on a keyboard, the right shoulder
+  button on a gamepad).
+- On the ground, turning the phone steers with the rudder, and auto-rudder keeps the takeoff roll
+  straight. A taildragger needs it: without rudder it swerves, and braking hard with the tail up
+  tips it onto its nose.
+- The propeller turns, the flaps move, and the engine's torque, the slipstream over the tail and
+  P-factor are all there.
+- The hangar shows the Super Cub, with its rate of climb, top speed and the turns full power can
+  sustain.
+
 ## 0.1.2
 
 - The glider casts a real shadow on the ground, sharp up close and softer the higher you fly, as the
